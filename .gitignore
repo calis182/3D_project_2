@@ -1,0 +1,30 @@
+# Compiled Object files
+*.slo
+*.lo
+*.o
+
+# Compiled Dynamic libraries
+*.so
+*.dylib
+
+# Compiled Static libraries
+*.lai
+*.la
+*.a
+
+#andra saker
+*.sdf
+*.opensdf
+*.suo
+*.exe
+*.ilk
+*.pdb
+*.vcxproj
+*.vcxproj.filters
+*.vcxproj.user
+
+# Mappar
+3D_project_2/Obj/**/
+3D_project_2/Code/ipch/
+3D_project_2/bin/x64/
+3D_project_2/bin/x86/
