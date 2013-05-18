@@ -13,12 +13,11 @@ cbuffer MatrixBuffer
 // TYPEDEFS //
 //////////////
 
-//The two input types both have a color component so that the particle can have an individual color that is added to the texture base color.
 struct VertexInputType
 {
     float3 position : POSITION;
-	float3 color : COLOR;
-	float2 uv : TEX;
+	float3 normal : NORMAL;
+	float2 uv : UV;
 
 	row_major float4x4 world : WORLD;
 	uint instancedID : SV_InstanceID;
@@ -27,11 +26,13 @@ struct VertexInputType
 struct PixelInputType
 {
     float4 position : SV_POSITION;
-    float3 color : COLORS;
+    float3 normal : NORMALS;
     float2 tex : TEXCOORD0;
 };
 
 SamplerState SampleType;
+
+Texture2D Texture;
 
 //-----------------------------------------------------------------------------------------
 // State Structures
@@ -55,7 +56,7 @@ PixelInputType ParticleVertexShader(VertexInputType input)
     
     output.tex = input.uv;
 
-    output.color = input.color;
+    output.normal = input.normal;
 
     return output;
 }
@@ -65,7 +66,7 @@ PixelInputType ParticleVertexShader(VertexInputType input)
 ////////////////////////////////////////////////////////////////////////////////
 float4 ParticlePixelShader(PixelInputType input) : SV_TARGET
 {
-    return float4(input.color, 1);
+    return Texture.Sample(SampleType, input.tex);
 }
 
 technique11 BasicTech

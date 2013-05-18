@@ -23,6 +23,8 @@
 #include "ParticleSystem.h"
 #include "SkyBox.h"
 #include "ObjMesh.h"
+#include "DynamicCubeMap.h"
+#include "BlendState.h"
 
 //--------------------------------------------------------------------------------------
 // Global Variables
@@ -37,6 +39,9 @@ ID3D11DepthStencilView* g_DepthStencilView		= NULL;
 ID3D11Device*			g_Device				= NULL;
 ID3D11DeviceContext*	g_DeviceContext			= NULL;
 
+D3D11_VIEWPORT vp;
+
+Shader* debugTextureShader;
 
 Terrain* g_Terrain = NULL;
 Input* input = NULL;
@@ -47,9 +52,10 @@ ParticleSystem* particleSystem = NULL;
 
 PointLight* light;
 
-ObjMesh* objMesh;
+ObjMesh* object;
 
 SkyBox* skyBox;
+DynamicCubeMap* cubeMap;
 
 __int64 frames = 0;
 
@@ -117,6 +123,18 @@ int WINAPI wWinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdL
 	delete input;
 	delete camera;
 	delete light;
+	delete cubeMap;
+	delete object;
+	
+	delete debugTextureShader;
+
+	g_Device->Release();
+	g_DeviceContext->Release();
+	g_SwapChain->Release();
+	g_RenderTargetView->Release();
+	g_DepthStencil->Release();
+	g_DepthStencilView->Release();
+
 	return (int) msg.wParam;
 }
 
@@ -183,7 +201,7 @@ HRESULT InitDirect3D()
 
 	UINT createDeviceFlags = 0;
 #ifdef _DEBUG
-	createDeviceFlags |= D3D11_CREATE_DEVICE_DEBUG;
+	//createDeviceFlags |= D3D11_CREATE_DEVICE_DEBUG;
 #endif
 
 	D3D_DRIVER_TYPE driverType;
@@ -295,7 +313,6 @@ HRESULT InitDirect3D()
 	g_DeviceContext->OMSetRenderTargets( 1, &g_RenderTargetView, g_DepthStencilView );
 
 	// Setup the viewport
-	D3D11_VIEWPORT vp;
 	vp.Width = (float)screenWidth;
 	vp.Height = (float)screenHeight;
 	vp.MinDepth = 0.0f;
@@ -304,18 +321,20 @@ HRESULT InitDirect3D()
 	vp.TopLeftY = 0;
 	g_DeviceContext->RSSetViewports( 1, &vp );
 
-
 	D3D11_INPUT_ELEMENT_DESC inputDesc[] = {
 	{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-	{ "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-	{ "UV", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 24, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+	{ "UV", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0 },
 	};
+
+	debugTextureShader = new Shader();
+	debugTextureShader->Init(g_Device, g_DeviceContext, "..\\Shaders\\DebugTexture.fx", inputDesc, 2);
+	
 
 	skyBox = new SkyBox(g_Device, g_DeviceContext);
 	skyBox->init();
 
-	objMesh = new ObjMesh(g_Device, g_DeviceContext);
-	objMesh->initiate("..\\Shaders\\obj_mesh\\bth.obj");
+	object = new ObjMesh(g_Device, g_DeviceContext);
+	object->initiate("..\\Shaders\\obj_mesh\\bth.obj");
 
 	g_Terrain = new Terrain();
 	if(!g_Terrain->init(g_Device, g_DeviceContext))
@@ -333,11 +352,18 @@ HRESULT InitDirect3D()
 	light = new PointLight(D3DXVECTOR4(0.2, 0.2, 0.2, 0.2), D3DXVECTOR4(0.2, 0.2, 0.2, 0.2), D3DXVECTOR4(0.2, 0.2, 0.2, 0.2), D3DXVECTOR3(-128, 128, 128), 500);
 
 	camera = new Camera();
+	camera->SetLens((float)D3DX_PI * 0.45f, 1024.0f/768.0f, 0.1f, 1000.0f);
+	camera->UpdateViewMatrix();
 
 	particleSystem = new ParticleSystem();
 	particleSystem->Init(g_Device, g_DeviceContext);
 
-	camera->SetLens((float)D3DX_PI * 0.45f, 1024.0f/768.0f, 0.1f, 1000.0f);
+
+	cubeMap = new DynamicCubeMap(g_Device);
+	cubeMap->init();
+	cubeMap->setUpCameras(D3DXVECTOR3(0, 20, 0));
+
+	BlendState::getInstance()->createBlendState(g_Device);
 
 	return S_OK;
 }
@@ -368,18 +394,10 @@ HRESULT Update(float deltaTime)
 		return 1;
 
 	if(input->isKeyPressed(DIK_SPACE) && time > 0.50) //SPACE
-		{
-			time = 0;	
-			if(flyModeOn)
-			{
-				flyModeOn=false;
-					
-			}
-			else
-			{
-				flyModeOn=true;
-			}
-		}
+	{
+		time = 0;
+		flyModeOn = !flyModeOn;
+	}
 
 	int x, y;
 	input->getDiffMouseLocation(x, y);
@@ -390,8 +408,8 @@ HRESULT Update(float deltaTime)
 	D3DXVECTOR3 pos = camera->GetPosition();
 	if(!flyModeOn)
 	{
-	pos.y = g_Terrain->getY(pos.x, pos.z) + 10;
-	oldPos.y = pos.y;
+		pos.y = g_Terrain->getY(pos.x, pos.z) + 10;
+		oldPos.y = pos.y;
 	}
 	else
 	{
@@ -406,6 +424,8 @@ HRESULT Update(float deltaTime)
 	else
 		camera->SetPosition(pos);
 
+	camera->UpdateViewMatrix();
+
 	particleSystem->Update(deltaTime, frames, *camera);
 	skyBox->update(camera->GetPosition());
 
@@ -415,31 +435,80 @@ HRESULT Update(float deltaTime)
 HRESULT Render(float deltaTime)
 {
 	frames++;
+	Camera cameraTemp;
+	ID3D11RenderTargetView* renderTargets[1];
+	D3DXMATRIX world, view = camera->View(), proj = camera->Proj(), wvp;
+	D3DXMatrixIdentity(&world);
+	wvp = world * view * proj;
 
 	//clear render target
 	static float ClearColor[4] = { 0, 0, 0, 0.0f };
-	g_DeviceContext->ClearRenderTargetView( g_RenderTargetView, ClearColor );
-
-	//clear depth info
-	g_DeviceContext->ClearDepthStencilView( g_DepthStencilView, D3D11_CLEAR_DEPTH, 1.0f, 0 );
-
 	//set topology
 	g_DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
+	g_DeviceContext->RSSetViewports(1, &cubeMap->getViewPort());
+	static bool Switch = true;
+
+	skyBox->update(cubeMap->getPosition());
+
+	
+	BlendState::getInstance()->setState(0, g_DeviceContext);
+	//Render for all 6 cameras 
+	for(int i = 0; i < 6; i++)
+	{
+		//if(Switch)
+		//{
+			//Clear render target view and depth stencil view
+			g_DeviceContext->ClearRenderTargetView(cubeMap->getRenderTargetView(i), ClearColor);
+			g_DeviceContext->ClearDepthStencilView(cubeMap->getDepthStencilView(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+
+			//Bind render target view
+			renderTargets[0] = cubeMap->getRenderTargetView(i);
+			g_DeviceContext->OMSetRenderTargets(1, renderTargets, cubeMap->getDepthStencilView());
+
+			cameraTemp = cubeMap->getCamera(i);
+			view = cameraTemp.View();
+			proj = cameraTemp.Proj();
+			
+			BlendState::getInstance()->setState(1, g_DeviceContext);
+			skyBox->render(view * proj, skyBox->getCubeMap());
+			BlendState::getInstance()->setState(0, g_DeviceContext);
+			g_Terrain->render(g_DeviceContext, world, view, proj, cubeMap->getPosition(), *light, skyBox->getCubeMap());
+
+			BlendState::getInstance()->setState(0, g_DeviceContext);
+			particleSystem->Draw(g_DeviceContext, world, view, proj);
+		//}
+		Switch = !Switch;
+	}
+	Switch = !Switch;
+	g_DeviceContext->GenerateMips(cubeMap->getCubeMap());
+
 	//calculate WVP matrix
-	static float rotY = 0.0f;
-	D3DXMATRIX world, view = camera->View(), proj = camera->Proj(), wvp;
-	D3DXMatrixRotationY(&world, 0);
-
-
-	camera->UpdateViewMatrix();
+	view = camera->View();
+	proj = camera->Proj();
 	
-	g_Terrain->render(g_DeviceContext, world, view, proj, camera->GetPosition(), *light);
+	renderTargets[0] = g_RenderTargetView;
+	
+	//clear render target
+	//clear depth info
+	g_DeviceContext->ClearRenderTargetView( g_RenderTargetView, ClearColor );
+	g_DeviceContext->ClearDepthStencilView( g_DepthStencilView, D3D11_CLEAR_DEPTH, 1.0f, 0 );
+
+	g_DeviceContext->RSSetViewports(1, &vp);
+	g_DeviceContext->OMSetRenderTargets(1, renderTargets, g_DepthStencilView);
+
+	skyBox->update(camera->GetPosition());
+	BlendState::getInstance()->setState(0, g_DeviceContext);
+	skyBox->render(view * proj, skyBox->getCubeMap());
+	
+	g_Terrain->render(g_DeviceContext, world, view, proj, camera->GetPosition(), *light, skyBox->getCubeMap());
+	
+	//objMesh->billboard(camera->GetPosition());
+	BlendState::getInstance()->setState(1, g_DeviceContext);
+	object->render(view, proj, camera->GetPosition(), *light, cubeMap->getCubeMap());
+	
+	BlendState::getInstance()->setState(0, g_DeviceContext);
 	particleSystem->Draw(g_DeviceContext, world, view, proj);
-	objMesh->billboard(camera->GetPosition());
-	objMesh->render(view, proj, camera->GetPosition(), *light);
-	skyBox->render(view*proj);
-	
 
 	char title[100];
 	sprintf_s(title, sizeof(title),  "%f", 1/deltaTime);

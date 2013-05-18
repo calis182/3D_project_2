@@ -6,6 +6,7 @@ BaseParticle::BaseParticle(D3DXVECTOR3 m_position, D3DXVECTOR3 m_direction, floa
 	this->m_direction = m_direction;
 	this->m_velocity = m_velocity;
 	this->m_texture = m_texture;
+	D3DXMatrixTranslation(&matrix, m_position.x, m_position.y, m_position.z);
 }
 
 void BaseParticle::setPositionX(float X)
@@ -38,11 +39,37 @@ void BaseParticle::setDirectionZ(float Z)
 	this->m_direction.z = Z;
 }
 
+void BaseParticle::init(D3DXVECTOR3& m_position, D3DXVECTOR3& m_direction, float m_velocity)
+{
+	this->m_position = m_position;
+	this->m_direction = m_direction;
+	this->m_velocity = m_velocity;
+	D3DXMatrixTranslation(&matrix, m_position.x, m_position.y, m_position.z);
+}
+
 void BaseParticle::update(float dt)
 {
-	m_position.x += m_direction.x * m_velocity * dt;
-	m_position.y += m_direction.y * m_velocity * dt;
-	m_position.z += m_direction.z * m_velocity * dt;
+	float velo = m_velocity * dt;
+	m_position.x += m_direction.x * velo;
+	m_position.y += m_direction.y * velo;
+	m_position.z += m_direction.z * velo;
+
+	D3DXMatrixTranslation(&matrix, m_position.x, m_position.y, m_position.z);
+}
+
+D3DXVECTOR3& BaseParticle::getPosition()
+{
+	return this->m_position;
+}
+
+D3DXVECTOR3 BaseParticle::getDirection()
+{
+	return this->m_direction;
+}
+
+float BaseParticle::getVelocity()
+{
+	return this->m_velocity;
 }
 
 Fire::Fire(D3DXVECTOR3 m_position, D3DXVECTOR3 m_direction, float m_velocity, TextureClass* m_texture, float age)
@@ -69,24 +96,19 @@ void Fire::update(float dt, float frames)
 		z *= 3;
 	}
 
-	m_position.x += x * m_velocity * dt;
-	m_position.y += m_direction.y * m_velocity * dt;
-	m_position.z += z * m_velocity * dt;
+	float velo = m_velocity * dt;
+
+	m_position.x += x * velo;
+	m_position.y += m_direction.y * velo;
+	m_position.z += z * velo;
+
+	D3DXMatrixTranslation(&matrix, m_position.x, m_position.y, m_position.z);
 }
 
-D3DXVECTOR3 BaseParticle::getPosition()
+void Fire::init(D3DXVECTOR3& m_position, D3DXVECTOR3& m_direction, float m_velocity, float age)
 {
-	return this->m_position;
-}
-
-D3DXVECTOR3 BaseParticle::getDirection()
-{
-	return this->m_direction;
-}
-
-float BaseParticle::getVelocity()
-{
-	return this->m_velocity;
+	BaseParticle::init(m_position, m_direction, m_velocity);
+	this->age = age;
 }
 
 Snow::Snow(D3DXVECTOR3 m_position, D3DXVECTOR3 m_direction, float m_velocity, TextureClass* m_texture) 

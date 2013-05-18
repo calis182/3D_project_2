@@ -171,7 +171,7 @@ float4 PSScene(PSSceneIn input) : SV_Target
 
 	texColor += diffuse + light.ambient + spec;
 
-	return float4(input.normal,1);
+	return texColor;
 }
 
 //-----------------------------------------------------------------------------------------
@@ -184,7 +184,7 @@ technique11 BasicTech
 		// Set VS, GS, and PS
         SetVertexShader(CompileShader(vs_4_0, VSScene()));
 		SetGeometryShader(NULL);
-		SetGeometryShader(CompileShader(gs_4_0, GSScene()));
+		//SetGeometryShader(CompileShader(gs_4_0, GSScene()));
         SetPixelShader(CompileShader(ps_4_0, PSScene()));
 	    
 	    SetRasterizerState( NoCulling );

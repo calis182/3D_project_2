@@ -29,7 +29,7 @@ public:
 	bool initShader();
 	bool createBuffers();
 
-	void render(D3DXMATRIX& view, D3DXMATRIX& proj, D3DXVECTOR3& cameraPos, PointLight& light);
+	void render(D3DXMATRIX& view, D3DXMATRIX& proj, D3DXVECTOR3& cameraPos, PointLight& light, ID3D11ShaderResourceView* cubeMap);
 
 	void billboard(const D3DXVECTOR3& cameraPos);
 

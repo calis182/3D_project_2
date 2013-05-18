@@ -53,7 +53,7 @@ bool ObjMesh::initShader()
 
 	shader = new Shader();
 
-	if(shader->Init(device, deviceContext, "..\\shaders\\object.fx", inputDesc, 3))
+	if(FAILED(shader->Init(device, deviceContext, "..\\shaders\\object.fx", inputDesc, 3)))
 	{
 		delete shader;
 		return false;
@@ -125,8 +125,9 @@ bool ObjMesh::createBuffers()
 	return true;
 }
 
-void ObjMesh::render(D3DXMATRIX& view, D3DXMATRIX& proj, D3DXVECTOR3& cameraPos, PointLight& light)
+void ObjMesh::render(D3DXMATRIX& view, D3DXMATRIX& proj, D3DXVECTOR3& cameraPos, PointLight& light, ID3D11ShaderResourceView* cubeMap)
 {
+	shader->SetResource("cubeMap", cubeMap);
 	shader->SetMatrix("gW", world);
 	shader->SetMatrix("gV", view);
 	shader->SetMatrix("gP", proj);

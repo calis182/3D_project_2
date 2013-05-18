@@ -13,6 +13,8 @@
 #include <map>
 #include <fstream>
 
+#include <vld.h>
+
 #include "Buffer.h"
 #include "Shader.h"
 #include "TextureClass.h"

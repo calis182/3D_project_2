@@ -136,14 +136,15 @@ bool SkyBox::createBox()
 	return true;
 }
 
-void SkyBox::render(D3DXMATRIX vp)
+void SkyBox::render(D3DXMATRIX vp, ID3D11ShaderResourceView* cubeMap)
 {
-	shader->SetResource("gCubeMap", texture->getTexture());
+	shader->SetResource("gCubeMap", cubeMap);
 	shader->SetMatrix("gWVP", world*vp);
-	shader->Apply(0);
 	
 	vertexBuffer->Apply(0);
 	indexBuffer->Apply(0);
+
+	shader->Apply(0);
 
 	deviceContext->DrawIndexed(36, 0, 0);
 }

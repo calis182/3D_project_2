@@ -42,6 +42,10 @@ public:
 
 	void LookAt(D3DXVECTOR3 pos, D3DXVECTOR3 target, D3DXVECTOR3 worldUp);
 
+	void setLook(D3DXVECTOR3 look) { mLook = look; }
+	void setUp(D3DXVECTOR3 up) { mUp = up; }
+	void setRight(D3DXVECTOR3 right) { mRight = right; }
+
 	D3DXMATRIX View()const;
 	D3DXMATRIX Proj()const;
 	D3DXMATRIX ViewsProj()const;

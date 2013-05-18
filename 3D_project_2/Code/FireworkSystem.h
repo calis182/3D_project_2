@@ -12,8 +12,8 @@ public:
 
 	virtual void render(D3DXMATRIX& world, D3DXMATRIX& view, D3DXMATRIX& proj);
 	virtual void update(float dt, float frames, Camera& cam);
-
-	void updateBuffers(float frames);
+	
+	void updateBuffers(Camera& cam);
 	void emitParticles(float time);
 	void killParticles(float time, float dt);
 

@@ -33,7 +33,7 @@ HRESULT Shader::Init(ID3D11Device* device, ID3D11DeviceContext* deviceContext, c
 	DWORD dwShaderFlags = D3D10_SHADER_ENABLE_STRICTNESS;
 
 #if defined(DEBUG) || defined(_DEBUG)
-	dwShaderFlags |= D3D10_SHADER_DEBUG;
+	//dwShaderFlags |= D3D10_SHADER_DEBUG;
 #endif
 
 	hr = D3DX11CompileFromFile(

@@ -15,18 +15,19 @@ Terrain::~Terrain()
 	delete heightMap;
 	delete mesh;
 	delete index;
+	delete fence;
 	texture1.shutdown();
 	texture2.shutdown();
 	texture3.shutdown();
 	blendMap.shutdown();
 	texture4.shutdown();
+
+	delete g_Shader;
+	delete g_Fence;
 }
 
 HRESULT Terrain::initShader(ID3D11Device* device, ID3D11DeviceContext* deviceContext)
 {
-
-	blendState.createBlendState(device);
-
 	D3D11_INPUT_ELEMENT_DESC inputDesc[] = {
 	{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
 	{ "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0 },
@@ -259,14 +260,9 @@ void Terrain::shutdown()
 	delete g_Fence;
 }
 
-void Terrain::render(ID3D11DeviceContext* deviceContext, D3DXMATRIX world, D3DXMATRIX view, D3DXMATRIX proj, D3DXVECTOR3 cam, PointLight &light)
+void Terrain::render(ID3D11DeviceContext* deviceContext, D3DXMATRIX world, D3DXMATRIX view, D3DXMATRIX proj, D3DXVECTOR3 cam, PointLight& light, ID3D11ShaderResourceView* cubeMap)
 {
-	mesh->Unmap();
-	index->Unmap();
-	fence->Unmap();
-
-
-	
+	//g_Shader->SetResource("cubeMap", cubeMap);
 	g_Shader->SetResource("gTexture1", texture1.getTexture());
 	g_Shader->SetResource("gTexture2", texture2.getTexture());
 	g_Shader->SetResource("gTexture3", texture3.getTexture());
@@ -276,22 +272,22 @@ void Terrain::render(ID3D11DeviceContext* deviceContext, D3DXMATRIX world, D3DXM
 	g_Shader->SetMatrix("gP", proj);
 	g_Shader->SetFloat4("eyePos", D3DXVECTOR4(cam, 1));
 	g_Shader->SetRawData("light", &light, sizeof(light));
-
-	mesh->Apply(0);
-	index->Apply(0);
-	g_Shader->Apply(0);
-	blendState.setState(1, deviceContext);
-	deviceContext->DrawIndexed(indexCount,0,0);
-
+	
 	g_Fence->SetResource("Texture", texture4.getTexture());
 	g_Fence->SetMatrix("worldMatrix", world);
 	g_Fence->SetMatrix("viewMatrix", view);
 	g_Fence->SetMatrix("projectionMatrix", proj);
 	
-	blendState.setState(0, deviceContext);
+	BlendState::getInstance()->setState(0, deviceContext);
 	fence->Apply(0);
 	g_Fence->Apply(0);
 	deviceContext->Draw(24,0);
+	
+	BlendState::getInstance()->setState(1, deviceContext);
+	mesh->Apply(0);
+	index->Apply(0);
+	g_Shader->Apply(0);
+	deviceContext->DrawIndexed(indexCount,0,0);
 
 }
 

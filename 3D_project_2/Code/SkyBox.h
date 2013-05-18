@@ -13,9 +13,11 @@ public:
 	bool init();
 	bool initShader();
 	bool createBox();
-
-	void render(D3DXMATRIX vp);
+	
+	void render(D3DXMATRIX vp, ID3D11ShaderResourceView* cubeMap);
 	void update(D3DXVECTOR3 cameraPos);
+	
+	ID3D11ShaderResourceView* getCubeMap() { return texture->getTexture(); }
 
 private:
 	struct Vertex
