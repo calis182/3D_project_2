@@ -24,7 +24,7 @@
 *.vcxproj.user
 
 # Mappar
-3D_project_2/Obj/**/
+3D_project_2/Obj/
 3D_project_2/Code/ipch/
 3D_project_2/bin/x64/
 3D_project_2/bin/x86/
