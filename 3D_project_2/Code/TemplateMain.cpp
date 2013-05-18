@@ -349,8 +349,9 @@ HRESULT InitDirect3D()
 		MessageBox(NULL, "Could not init input", NULL, MB_OK);
 	}
 
-	light = new PointLight(D3DXVECTOR4(0.2, 0.2, 0.2, 0.2), D3DXVECTOR4(0.2, 0.2, 0.2, 0.2), D3DXVECTOR4(0.2, 0.2, 0.2, 0.2), D3DXVECTOR3(-128, 128, 128), 500);
-
+	float colorCorr = 1000;
+	light = new PointLight(D3DXVECTOR4(252/colorCorr, 214/colorCorr, 103/colorCorr, 1), D3DXVECTOR4(252/colorCorr, 214/colorCorr, 103/colorCorr, 1), D3DXVECTOR4(252/colorCorr, 214/colorCorr, 103/colorCorr, 1), D3DXVECTOR3(-128, 128, 128), 500);
+	
 	camera = new Camera();
 	camera->SetLens((float)D3DX_PI * 0.45f, 1024.0f/768.0f, 0.1f, 1000.0f);
 	camera->UpdateViewMatrix();
