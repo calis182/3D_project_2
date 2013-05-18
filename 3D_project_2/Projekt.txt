@@ -1,0 +1,11 @@
+Terräng 1-10
+Skuggor 2-10
+Partikelsystem 1-6
+Kameraflyttning 1-5
+Defferred rendering 5-10
+Reflektioner 1-6
+Bacface-culling 2
+Tessellering 2-10
+Kollisionshantering 2-6
+Billboarding 1-4
+Bumb-mapping 1-5
