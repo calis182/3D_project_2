@@ -18,7 +18,7 @@ public:
 	bool init(ID3D11Device* device, ID3D11DeviceContext* deviceContext);
 	void shutdown();
 	void render(ID3D11DeviceContext* deviceContext, D3DXMATRIX world, D3DXMATRIX view, D3DXMATRIX proj, D3DXVECTOR3 cam, PointLight& light, ID3D11ShaderResourceView* cubeMap);
-	 
+
 	int getIndexCount();
 
 	float getY(float x, float z);

@@ -306,9 +306,6 @@ HRESULT InitDirect3D()
 	hr = g_Device->CreateDepthStencilView( g_DepthStencil, &descDSV, &g_DepthStencilView );
 	if( FAILED(hr) )
 		return hr;
-	
-
-
 
 	g_DeviceContext->OMSetRenderTargets( 1, &g_RenderTargetView, g_DepthStencilView );
 

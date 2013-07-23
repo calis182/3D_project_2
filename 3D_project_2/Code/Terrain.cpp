@@ -132,7 +132,7 @@ bool Terrain::init(ID3D11Device* device, ID3D11DeviceContext* deviceContext)
 			vec5.y /= length;
 			vec5.z /= length;
 
-			vertices[i * width + j].normal = vec5;
+			vertices[i * width + j].normal = -vec5;
 		}
 	}
 
@@ -273,6 +273,12 @@ void Terrain::render(ID3D11DeviceContext* deviceContext, D3DXMATRIX world, D3DXM
 	g_Shader->SetFloat4("eyePos", D3DXVECTOR4(cam, 1));
 	g_Shader->SetRawData("light", &light, sizeof(light));
 	
+	BlendState::getInstance()->setState(1, deviceContext);
+	mesh->Apply(0);
+	index->Apply(0);
+	g_Shader->Apply(0);
+	deviceContext->DrawIndexed(indexCount,0,0);
+
 	g_Fence->SetResource("Texture", texture4.getTexture());
 	g_Fence->SetMatrix("worldMatrix", world);
 	g_Fence->SetMatrix("viewMatrix", view);
@@ -282,13 +288,6 @@ void Terrain::render(ID3D11DeviceContext* deviceContext, D3DXMATRIX world, D3DXM
 	fence->Apply(0);
 	g_Fence->Apply(0);
 	deviceContext->Draw(24,0);
-	
-	BlendState::getInstance()->setState(1, deviceContext);
-	mesh->Apply(0);
-	index->Apply(0);
-	g_Shader->Apply(0);
-	deviceContext->DrawIndexed(indexCount,0,0);
-
 }
 
 int Terrain::getIndexCount()

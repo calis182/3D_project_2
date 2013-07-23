@@ -13,7 +13,7 @@
 #include <map>
 #include <fstream>
 
-#include <vld.h>
+//#include <vld.h>
 
 #include "Buffer.h"
 #include "Shader.h"

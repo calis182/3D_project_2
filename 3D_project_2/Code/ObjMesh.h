@@ -33,6 +33,8 @@ public:
 
 	void billboard(const D3DXVECTOR3& cameraPos);
 
+	D3DXMATRIX& getMatrix() { return world; }
+
 private:
 	ID3D11Device* device;
 	ID3D11DeviceContext* deviceContext;
