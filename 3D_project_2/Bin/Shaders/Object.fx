@@ -156,10 +156,10 @@ technique11 BasicTech
     pass p0
     {
 		// Set VS, GS, and PS
-        SetVertexShader( CompileShader( vs_4_0, VSScene() ) );
-		SetGeometryShader( NULL);
-		//SetGeometryShader( CompileShader( gs_4_0, GSScene()));
-        SetPixelShader( CompileShader( ps_4_0, PSScene() ) );
+        SetVertexShader( CompileShader( vs_5_0, VSScene() ) );
+		//SetGeometryShader( NULL);
+		SetGeometryShader( CompileShader( gs_5_0, GSScene()));
+        SetPixelShader( CompileShader( ps_5_0, PSScene() ) );
 	    
 	    SetRasterizerState( NoCulling );
     }  

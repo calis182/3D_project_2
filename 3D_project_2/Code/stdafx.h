@@ -7,6 +7,7 @@
 #include <D3DX10math.h>
 #include <d3dx11effect.h>
 #include <d3dCompiler.h>
+#include <DxErr.h>
 
 #include <string>
 #include <vector>
@@ -24,6 +25,9 @@
 #define SAFE_DELETE(x) if( x ) { delete(x); (x) = NULL; }
 #define SAFE_DELETE_ARRAY(x) if( x ) { delete[](x); (x) = NULL; }
 #define PI (3.14159265358979323846f)
+
+const int SCREEN_WIDTH = 1024;
+const int SCREEN_HEIGHT = 768;
 
 #pragma comment(lib, "d3d11.lib")
 #pragma comment(lib, "d3dcompiler.lib")

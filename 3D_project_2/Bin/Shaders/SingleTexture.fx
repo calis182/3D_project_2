@@ -78,6 +78,8 @@ technique11 BasicTech
     {
 		// Set VS, GS, and PS
         SetVertexShader( CompileShader( vs_4_0, ParticleVertexShader() ) );
+		SetDomainShader(NULL);
+		SetHullShader(NULL);
         SetGeometryShader( NULL );
         SetPixelShader( CompileShader( ps_4_0, ParticlePixelShader() ) );
 	    

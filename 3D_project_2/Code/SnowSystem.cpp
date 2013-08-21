@@ -86,7 +86,7 @@ SnowSystem::~SnowSystem()
 {
 }
 
-void SnowSystem::render(D3DXMATRIX &world, D3DXMATRIX &view, D3DXMATRIX &proj)
+void SnowSystem::render(ID3D11DeviceContext* deviceContext, D3DXMATRIX &world, D3DXMATRIX &view, D3DXMATRIX &proj)
 {
 	shader->SetMatrix("worldMatrix", world);
 	shader->SetMatrix("viewMatrix", view);

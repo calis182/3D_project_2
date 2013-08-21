@@ -17,7 +17,7 @@ BlendState::~BlendState()
 
 void BlendState::shutdown()
 {
-	delete blendState;
+	SAFE_DELETE(blendState);
 }
 
 BlendState* BlendState::getInstance()
@@ -31,7 +31,6 @@ BlendState* BlendState::getInstance()
 
 void BlendState::createBlendState(ID3D11Device* mDevice)
 {
-	
 	blend.AlphaToCoverageEnable = true;
 	blend.IndependentBlendEnable = false;
 
@@ -61,22 +60,9 @@ void BlendState::createBlendState(ID3D11Device* mDevice)
 	blend2.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
 	
 	mDevice->CreateBlendState(&blend2, &transparentBS[1]);
-
-/*
-	blend.RenderTarget[1].BlendEnable = true;
-	blend.RenderTarget[1].SrcBlend = D3D11_BLEND_SRC_ALPHA;
-	blend.RenderTarget[1].DestBlend = D3D11_BLEND_INV_SRC_ALPHA;
-	blend.RenderTarget[1].BlendOp = D3D11_BLEND_OP_ADD;
-	blend.RenderTarget[1].SrcBlendAlpha = D3D11_BLEND_ONE;
-	blend.RenderTarget[1].DestBlendAlpha = D3D11_BLEND_ZERO;
-	blend.RenderTarget[1].BlendOpAlpha = D3D11_BLEND_OP_ADD;
-	blend.RenderTarget[1].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
-	*/
 }
 
 void BlendState::setState(int state, ID3D11DeviceContext* mDeviceContext)
 {
-	
 	mDeviceContext->OMSetBlendState(transparentBS[state], blendFactor, 0xffffffff);
 }
-

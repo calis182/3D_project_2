@@ -11,6 +11,8 @@
 #include "SnowSystem.h"
 #include "TestSystem.h"
 
+void updateParticles(void** param);
+
 class ParticleSystem
 {
 private:
@@ -24,6 +26,16 @@ public:
 
 	void Update(float dt, float frames, Camera& cam);
 	void Draw(ID3D11DeviceContext* dc, D3DXMATRIX &world, D3DXMATRIX &view, D3DXMATRIX &proj);
+
+	int getTotalNumOfParticles()
+	{
+		int total = 0;
+		for(int i = 0; i < systems.size(); i++)
+		{
+			total += systems.at(i)->getNumberOfParticles();
+		}
+		return total;
+	}
 
 };
 

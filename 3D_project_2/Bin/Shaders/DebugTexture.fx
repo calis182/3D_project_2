@@ -51,8 +51,7 @@ PSSceneIn VSScene(VSIn input)
 {
 	PSSceneIn output = (PSSceneIn)0;
 
-	output.Pos = mul(float4(input.Pos, 1), gWVP);
-
+	output.Pos = float4(input.Pos, 1);
 	output.uv = input.uv;
 
 	return output;

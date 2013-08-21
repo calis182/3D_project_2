@@ -7,7 +7,6 @@ Terrain::Terrain()
 
 	width = height = 0;
 	vertexCount = indexCount = 0;
-	
 }
 
 Terrain::~Terrain()
@@ -35,7 +34,7 @@ HRESULT Terrain::initShader(ID3D11Device* device, ID3D11DeviceContext* deviceCon
 	};
 
 	g_Shader = new Shader();
-	if(FAILED(g_Shader->Init(device, deviceContext, "../Shaders/Basic.fx", inputDesc, 3)))
+	if(FAILED(g_Shader->Init(device, deviceContext, "../Shaders/Terrain Tessellation.fx", inputDesc, 3)))
 	{
 		return E_FAIL;
 	}
@@ -51,12 +50,9 @@ HRESULT Terrain::initShader(ID3D11Device* device, ID3D11DeviceContext* deviceCon
 	texture3.init(device, "..\\Shaders\\water.jpg");
 	blendMap.init(device, "..\\Shaders\\blendmap.jpg");
 	texture4.init(device, "..\\Shaders\\wire.png");
-
-	
-
+	hm.init(device, "..\\Shaders\\hm.png");
 
 	return S_OK;
-
 }
 
 bool Terrain::init(ID3D11Device* device, ID3D11DeviceContext* deviceContext)
@@ -64,15 +60,15 @@ bool Terrain::init(ID3D11Device* device, ID3D11DeviceContext* deviceContext)
 	BUFFER_INIT_DESC vertexBufferDesc, indexBufferDesc;
 	Vertex* vertices = NULL;
 	unsigned long* indices = NULL;
-	float posX = 0, posZ = 0;
-	
+
 	width = 256;
 	height = 256;
-	
+	numOfStartingVertex = 10;
+
 	initShader(device, deviceContext);
 
-	vertexCount = width*height;
-	indexCount = (width-1) * (height-1) * 6;
+	vertexCount = numOfStartingVertex*numOfStartingVertex;
+	indexCount = (numOfStartingVertex-1) * (numOfStartingVertex-1) * 6;
 
 	vertices = new Vertex[vertexCount];
 	if(!vertices)
@@ -81,37 +77,56 @@ bool Terrain::init(ID3D11Device* device, ID3D11DeviceContext* deviceContext)
 	indices = new unsigned long[indexCount];
 	if(!indices)
 		return false;
-	
+
 	unsigned long ind = 0;
-	
+
 	heightMap = new HeightMap();
 	heightMap->loadRaw(width,height, "../Shaders/hm.raw", 0.3f, 0);
 
-	float** heightData = heightMap->getHeightMapData();
-
 	float repeat = 1.0f;
 
-	float x, y, z;
+	float x = 0, y = 0, z = 0;
 	float halfWidth = -(width*0.5f), halfHeight = (height*0.5f);
-	for(int i = 0; i < width; i++)
+	float triangleSize = width / (numOfStartingVertex-1);
+	float uvSize = 1.0f / (numOfStartingVertex-1);
+	for(int i = 0; i < numOfStartingVertex; i++)
 	{
-		x = halfWidth+i;
-		for(int j = 0; j < height; j++)
+		x = halfWidth+i*triangleSize;
+		for(int j = 0; j < numOfStartingVertex; j++)
 		{
-			int in = i * width + j;
-			z = halfHeight-j;
-			y = heightData[i][j];
+			int in = i * numOfStartingVertex + j;
+			z = halfHeight-j*triangleSize;
+			//y = heightMap->getData(x + 128, z + 128);
 			vertices[in].pos = D3DXVECTOR3(x, y, z);
 			vertices[in].normal = D3DXVECTOR3(0,1,0);
-			vertices[in].uv = D3DXVECTOR2(i/(width/repeat),j/(height/repeat));
+			//i/(width/repeat),j/(height/repeat));
+			vertices[in].uv = D3DXVECTOR2(i * uvSize, j * uvSize);
 		}
 	}
+	/*
+	vertices[0].pos = D3DXVECTOR3(-width*0.5f, 0, -height*0.5f);
+	vertices[1].pos = D3DXVECTOR3(width*0.5f, 0, -height*0.5f);
+	vertices[2].pos = D3DXVECTOR3(-width*0.5f, 0, height*0.5f);
+	vertices[3].pos = D3DXVECTOR3(width*0.5f, 0, height*0.5f);
+
+	vertices[0].normal = D3DXVECTOR3(0,1,0);
+	vertices[1].normal = D3DXVECTOR3(0,1,0);
+	vertices[2].normal = D3DXVECTOR3(0,1,0);
+	vertices[3].normal = D3DXVECTOR3(0,1,0);
+
+	vertices[0].uv = D3DXVECTOR2(0,0);
+	vertices[1].uv = D3DXVECTOR2(0,1);
+	vertices[2].uv = D3DXVECTOR2(1,0);
+	vertices[3].uv = D3DXVECTOR2(1,1);
+	*/
 
 	D3DXVECTOR3 vec1, vec2, vec3, vec4, vec5;
 
-	for(int i = 0; i < width-1; i++)
+	//for(int i = 0; i < width-1; i++)
+	/*for(int i = 0; i < 2-1; i++)
 	{
-		for(int j = 0; j < height-1; j++)
+		//for(int j = 0; j < height-1; j++)
+		for(int j = 0; j < 2-1; j++)
 		{
 			vec1 = vertices[i * width + j].pos;
 			vec2 = vertices[i * width + (j+1)].pos;
@@ -134,21 +149,20 @@ bool Terrain::init(ID3D11Device* device, ID3D11DeviceContext* deviceContext)
 
 			vertices[i * width + j].normal = -vec5;
 		}
-	}
+	}*/
 
 	ind = 0;
-	
-	for(int i = 0; i < width-1; i++)
+	for(int i = 0; i < numOfStartingVertex-1; i++)
 	{
-		for(int j = 0; j < height-1; j++)
+		for(int j = 0; j < numOfStartingVertex-1; j++)
 		{
-			indices[ind] = i * width + j;
-			indices[ind+1] = i * width + j+1;
-			indices[ind+2] = (i+1) * width + j+1;
+			indices[ind] = i * numOfStartingVertex + j;
+			indices[ind+1] = i * numOfStartingVertex + j+1;
+			indices[ind+2] = (i+1) * numOfStartingVertex + j+1;
 
-			indices[ind+3] = i * width + j;
-			indices[ind+4] = (i+1) * width + j+1;
-			indices[ind+5] = (i+1) * width + j;
+			indices[ind+3] = i * numOfStartingVertex + j;
+			indices[ind+4] = (i+1) * numOfStartingVertex + j+1;
+			indices[ind+5] = (i+1) * numOfStartingVertex + j;
 
 			ind += 6;
 		}
@@ -260,30 +274,38 @@ void Terrain::shutdown()
 	delete g_Fence;
 }
 
-void Terrain::render(ID3D11DeviceContext* deviceContext, D3DXMATRIX world, D3DXMATRIX view, D3DXMATRIX proj, D3DXVECTOR3 cam, PointLight& light, ID3D11ShaderResourceView* cubeMap)
+void Terrain::render(ID3D11DeviceContext* deviceContext, D3DXMATRIX world, D3DXMATRIX view, D3DXMATRIX proj, D3DXVECTOR3 cam, PointLight& light, ID3D11ShaderResourceView* cubeMap, float tessFactor, D3DXVECTOR4* frustrumPlaneEquation)
 {
 	//g_Shader->SetResource("cubeMap", cubeMap);
 	g_Shader->SetResource("gTexture1", texture1.getTexture());
 	g_Shader->SetResource("gTexture2", texture2.getTexture());
 	g_Shader->SetResource("gTexture3", texture3.getTexture());
 	g_Shader->SetResource("gBlendMap", blendMap.getTexture());
+	g_Shader->SetResource("gHeightMap", hm.getTexture());
 	g_Shader->SetMatrix("gW", world);
 	g_Shader->SetMatrix("gV", view);
 	g_Shader->SetMatrix("gP", proj);
+	g_Shader->SetMatrix("gVP", view * proj);
+	g_Shader->SetMatrix("gWVP", world * view * proj);
 	g_Shader->SetFloat4("eyePos", D3DXVECTOR4(cam, 1));
 	g_Shader->SetRawData("light", &light, sizeof(light));
-	
-	BlendState::getInstance()->setState(1, deviceContext);
+	g_Shader->SetFloat("tessFactor", tessFactor);
+	g_Shader->SetRawData("frustrumPlaneEquation", frustrumPlaneEquation, sizeof(D3DXVECTOR4) * 4);
+
+	deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_3_CONTROL_POINT_PATCHLIST);
+
 	mesh->Apply(0);
 	index->Apply(0);
 	g_Shader->Apply(0);
 	deviceContext->DrawIndexed(indexCount,0,0);
 
+	deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
 	g_Fence->SetResource("Texture", texture4.getTexture());
 	g_Fence->SetMatrix("worldMatrix", world);
 	g_Fence->SetMatrix("viewMatrix", view);
 	g_Fence->SetMatrix("projectionMatrix", proj);
-	
+
 	BlendState::getInstance()->setState(0, deviceContext);
 	fence->Apply(0);
 	g_Fence->Apply(0);
@@ -304,7 +326,6 @@ float Terrain::getY(float x, float z)
 		return heightMap->getData(X, Z);
 	return 0;
 }
-
 
 int Terrain::getWidth()
 { 

@@ -25,6 +25,11 @@
 #include "ObjMesh.h"
 #include "DynamicCubeMap.h"
 #include "BlendState.h"
+#include "GaussianBlur.h"
+
+void renderCubeMap(void* param);
+void extractPlanesFromFrustrum(D3DXVECTOR4* planeEquation, const D3DXMATRIX* viewProj, bool normalize = true);
+void normalizePlane(D3DXVECTOR4* planeEquation);
 
 //--------------------------------------------------------------------------------------
 // Global Variables
@@ -38,6 +43,14 @@ ID3D11Texture2D*        g_DepthStencil			= NULL;
 ID3D11DepthStencilView* g_DepthStencilView		= NULL;
 ID3D11Device*			g_Device				= NULL;
 ID3D11DeviceContext*	g_DeviceContext			= NULL;
+
+ID3D11Texture2D*		mainTexture2D = NULL; 
+ID3D11RenderTargetView* mainRTV		= NULL;
+ID3D11ShaderResourceView* mainSRV = NULL;
+ID3D11UnorderedAccessView* mainUAV = NULL;
+Buffer* fullscreenQuad;
+
+D3DXVECTOR4 frustrumPlaneEquation[6];
 
 D3D11_VIEWPORT vp;
 
@@ -56,6 +69,7 @@ ObjMesh* object;
 
 SkyBox* skyBox;
 DynamicCubeMap* cubeMap;
+GaussianBlur* gaussianBlur;
 
 __int64 frames = 0;
 
@@ -69,6 +83,38 @@ HRESULT				Update(float deltaTime);
 HRESULT				InitDirect3D();
 char*				FeatureLevelToString(D3D_FEATURE_LEVEL featureLevel);
 
+#include <vld.h>
+#include <fcntl.h>
+#include <io.h>
+
+void SetStdOutToNewConsole()
+{
+    // allocate a console for this app
+    AllocConsole();
+
+    // redirect unbuffered STDOUT to the console
+    HANDLE consoleHandle = GetStdHandle(STD_OUTPUT_HANDLE);
+    int fileDescriptor = _open_osfhandle((intptr_t)consoleHandle, _O_TEXT);
+    FILE *fp = _fdopen( fileDescriptor, "w" );
+    *stdout = *fp;
+    setvbuf( stdout, NULL, _IONBF, 0 );
+	
+    // give the console window a nicer title
+	char str[256];
+	sprintf_s(str, "Debug Output");
+
+    SetConsoleTitle(str);
+
+    // give the console window a bigger buffer size
+    CONSOLE_SCREEN_BUFFER_INFO csbi;
+    if ( GetConsoleScreenBufferInfo(consoleHandle, &csbi) )
+    {
+        COORD bufferSize;
+        bufferSize.X = csbi.dwSize.X;
+        bufferSize.Y = 50;
+        SetConsoleScreenBufferSize(consoleHandle, bufferSize);
+    }
+}
 
 //--------------------------------------------------------------------------------------
 // Entry point to the program. Initializes everything and goes into a message processing 
@@ -77,6 +123,8 @@ char*				FeatureLevelToString(D3D_FEATURE_LEVEL featureLevel);
 int WINAPI wWinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, int nCmdShow )
 {
 	srand((int)time(NULL));
+
+	SetStdOutToNewConsole();
 
 	_CrtSetDbgFlag( _CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
 	if( FAILED( InitWindow( hInstance, nCmdShow ) ) )
@@ -117,6 +165,7 @@ int WINAPI wWinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdL
 		}
 	}
 
+	delete gaussianBlur;
 	delete particleSystem;
 	delete g_Terrain;
 	delete skyBox;
@@ -125,7 +174,10 @@ int WINAPI wWinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdL
 	delete light;
 	delete cubeMap;
 	delete object;
+	BlendState::getInstance()->shutdown();
 	
+	SAFE_DELETE(fullscreenQuad);
+
 	delete debugTextureShader;
 
 	g_Device->Release();
@@ -162,7 +214,7 @@ HRESULT InitWindow( HINSTANCE hInstance, int nCmdShow )
 
 	// Adjust and create window
 	g_hInst = hInstance; 
-	RECT rc = { 0, 0, 1024, 768 };
+	RECT rc = { 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT };
 	AdjustWindowRect( &rc, WS_OVERLAPPEDWINDOW, FALSE );
 	
 	if(!(g_hWnd = CreateWindow(
@@ -270,20 +322,20 @@ HRESULT InitDirect3D()
 
 	// Create a render target view
 	ID3D11Texture2D* pBackBuffer;
-	hr = g_SwapChain->GetBuffer( 0, __uuidof( ID3D11Texture2D ), (LPVOID*)&pBackBuffer );
+	hr = g_SwapChain->GetBuffer( 0, __uuidof( ID3D11Texture2D ), (LPVOID*)&pBackBuffer);
 	if( FAILED(hr) )
 		return hr;
 
 	hr = g_Device->CreateRenderTargetView( pBackBuffer, NULL, &g_RenderTargetView );
+
 	pBackBuffer->Release();
 	if( FAILED(hr) )
 		return hr;
 
-
 	// Create depth stencil texture
 	D3D11_TEXTURE2D_DESC descDepth;
-	descDepth.Width = screenWidth;
-	descDepth.Height = screenHeight;
+	descDepth.Width = SCREEN_WIDTH;
+	descDepth.Height = SCREEN_HEIGHT;
 	descDepth.MipLevels = 1;
 	descDepth.ArraySize = 1;
 	descDepth.Format = DXGI_FORMAT_D32_FLOAT;
@@ -318,6 +370,64 @@ HRESULT InitDirect3D()
 	vp.TopLeftY = 0;
 	g_DeviceContext->RSSetViewports( 1, &vp );
 
+	//Create renderTarget, needed for the blur.
+	D3D11_TEXTURE2D_DESC texDesc;	
+	texDesc.Width				= SCREEN_WIDTH;
+	texDesc.Height				= SCREEN_HEIGHT;
+	texDesc.MipLevels			= 1;
+	texDesc.ArraySize			= 1;
+	texDesc.Format				= DXGI_FORMAT_R8G8B8A8_UNORM;
+	texDesc.SampleDesc.Count	= 1;
+	texDesc.SampleDesc.Quality	= 0;
+	texDesc.Usage				= D3D11_USAGE_DEFAULT;
+	texDesc.BindFlags			= D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_UNORDERED_ACCESS;
+	texDesc.CPUAccessFlags		= 0;
+	texDesc.MiscFlags			= 0;
+
+	hr = g_Device->CreateTexture2D(&texDesc, NULL, &mainTexture2D);
+	hr = g_Device->CreateRenderTargetView(mainTexture2D, NULL, &mainRTV);
+	hr = g_Device->CreateShaderResourceView(mainTexture2D, NULL, &mainSRV);
+	hr = g_Device->CreateUnorderedAccessView(mainTexture2D, NULL, &mainUAV);
+
+	struct Vertex
+	{
+		D3DXVECTOR3 pos;
+		D3DXVECTOR2 tex;
+
+		Vertex()
+		{
+			pos = D3DXVECTOR3(0, 0, 0);
+			tex = D3DXVECTOR2(0, 0);
+		}
+
+		Vertex(D3DXVECTOR3 p, D3DXVECTOR2 t)
+		{
+			pos = p;
+			tex = t;
+		}
+	};
+
+	//Quad for fullscreen quad
+	Vertex quad[4];
+	quad[0].pos = D3DXVECTOR3(1, 1, 0);
+	quad[0].tex = D3DXVECTOR2(1, 0);
+	quad[1].pos = D3DXVECTOR3(-1, 1, 0);
+	quad[1].tex = D3DXVECTOR2(0, 0);
+	quad[2].pos = D3DXVECTOR3(1, -1, 0);
+	quad[2].tex = D3DXVECTOR2(1, 1);
+	quad[3].pos = D3DXVECTOR3(-1, -1, 0);
+	quad[3].tex = D3DXVECTOR2(0, 1);
+
+	BUFFER_INIT_DESC bufferDesc;
+	bufferDesc.ElementSize = sizeof(Vertex);
+	bufferDesc.InitData = quad;
+	bufferDesc.NumElements = 4;
+	bufferDesc.Type = VERTEX_BUFFER;
+	bufferDesc.Usage = BUFFER_DEFAULT;
+
+	fullscreenQuad = new Buffer();
+	fullscreenQuad->Init(g_Device, g_DeviceContext, bufferDesc);
+
 	D3D11_INPUT_ELEMENT_DESC inputDesc[] = {
 	{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
 	{ "UV", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0 },
@@ -325,7 +435,9 @@ HRESULT InitDirect3D()
 
 	debugTextureShader = new Shader();
 	debugTextureShader->Init(g_Device, g_DeviceContext, "..\\Shaders\\DebugTexture.fx", inputDesc, 2);
-	
+
+	gaussianBlur = new GaussianBlur();
+	gaussianBlur->init(g_Device, g_DeviceContext);
 
 	skyBox = new SkyBox(g_Device, g_DeviceContext);
 	skyBox->init();
@@ -338,10 +450,9 @@ HRESULT InitDirect3D()
 	{
 		return E_FAIL;
 	}
-	
  	
 	input = new Input();
-	if(!input->init(g_hInst, g_hWnd, 1920, 1080))
+	if(!input->init(g_hInst, g_hWnd, SCREEN_WIDTH, SCREEN_HEIGHT))
 	{
 		MessageBox(NULL, "Could not init input", NULL, MB_OK);
 	}
@@ -350,12 +461,11 @@ HRESULT InitDirect3D()
 	light = new PointLight(D3DXVECTOR4(252/colorCorr, 214/colorCorr, 103/colorCorr, 1), D3DXVECTOR4(252/colorCorr, 214/colorCorr, 103/colorCorr, 1), D3DXVECTOR4(252/colorCorr, 214/colorCorr, 103/colorCorr, 1), D3DXVECTOR3(-128, 128, 128), 500);
 	
 	camera = new Camera();
-	camera->SetLens((float)D3DX_PI * 0.45f, 1024.0f/768.0f, 0.1f, 1000.0f);
+	camera->SetLens((float)D3DX_PI * 0.45f, (float)SCREEN_WIDTH/(float)SCREEN_HEIGHT, 0.1f, 1000.0f);
 	camera->UpdateViewMatrix();
 
 	particleSystem = new ParticleSystem();
 	particleSystem->Init(g_Device, g_DeviceContext);
-
 
 	cubeMap = new DynamicCubeMap(g_Device);
 	cubeMap->init();
@@ -396,13 +506,13 @@ HRESULT Update(float deltaTime)
 		time = 0;
 		flyModeOn = !flyModeOn;
 	}
-
+	
 	int x, y;
 	input->getDiffMouseLocation(x, y);
-	
+
 	camera->Yaw((float)x*0.5f);
 	camera->Pitch((float)y*0.5f);
-
+	
 	D3DXVECTOR3 pos = camera->GetPosition();
 	if(!flyModeOn)
 	{
@@ -416,17 +526,16 @@ HRESULT Update(float deltaTime)
 			pos.y = g_Terrain->getY(pos.x, pos.z) + 10;
 		}
 	}
-
+	
 	if(!g_Terrain->isInBounds((int)pos.x, (int)pos.z))
 		camera->SetPosition(oldPos);
 	else
 		camera->SetPosition(pos);
-
 	camera->UpdateViewMatrix();
-
+	
 	particleSystem->Update(deltaTime, frames, *camera);
 	skyBox->update(camera->GetPosition());
-
+	
 	return S_OK;
 }
 
@@ -435,57 +544,81 @@ HRESULT Render(float deltaTime)
 	frames++;
 	Camera cameraTemp;
 	ID3D11RenderTargetView* renderTargets[1];
-	D3DXMATRIX world, view = camera->View(), proj = camera->Proj(), wvp;
+	D3DXMATRIX world, view = camera->View(), proj = camera->Proj(), wvp, viewProj;
 	D3DXMatrixIdentity(&world);
 	wvp = world * view * proj;
-
+	
 	//clear render target
 	static float ClearColor[4] = { 0, 0, 0, 0.0f };
 	//set topology
 	g_DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
-	g_DeviceContext->RSSetViewports(1, &cubeMap->getViewPort());
-	static bool Switch = true;
-
-	skyBox->update(cubeMap->getPosition());
-
 	
-	BlendState::getInstance()->setState(0, g_DeviceContext);
+	D3DXVECTOR3 diff = cubeMap->getPosition() - camera->GetPosition();
+	float length = sqrt(D3DXVec3Dot(&diff, &diff));
+	length = (1 - length / 150.0f) * 150.0f + length / 150.0f + 15;
+	length *= 0.02f;
+
+	//Clamp
+	length = length > 3 ? 3 : length;
+	length = length < 0 ? 0 : length;
+
+	g_DeviceContext->RSSetViewports(1, &cubeMap->getViewPort(length));
+	
+	static int blurPasses = 0;
+	float tessFactor = 3.0f;
+	for(int i = 0; i <= 9; i++)
+	{
+		if(GetAsyncKeyState(char(i) + '0'))
+			tessFactor = i;
+	}
+
+	if(GetAsyncKeyState('O'))
+		blurPasses++;
+	else if(GetAsyncKeyState('L'))
+		blurPasses--;
+	
+	if(blurPasses < 0)
+		blurPasses = 0;
+	else if(blurPasses > 5)
+		blurPasses = 5;
+
+	if(GetAsyncKeyState('M'))
+		tessFactor = 64;
+	
 	//Render for all 6 cameras 
+	skyBox->update(cubeMap->getPosition());
 	for(int i = 0; i < 6; i++)
 	{
-		//if(Switch)
-		//{
-			//Clear render target view and depth stencil view
-			g_DeviceContext->ClearRenderTargetView(cubeMap->getRenderTargetView(i), ClearColor);
-			g_DeviceContext->ClearDepthStencilView(cubeMap->getDepthStencilView(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+		//Clear render target view and depth stencil view
+		g_DeviceContext->ClearRenderTargetView(cubeMap->getRenderTargetView(i, length), ClearColor);
+		g_DeviceContext->ClearDepthStencilView(cubeMap->getDepthStencilView(length), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 
-			//Bind render target view
-			renderTargets[0] = cubeMap->getRenderTargetView(i);
-			g_DeviceContext->OMSetRenderTargets(1, renderTargets, cubeMap->getDepthStencilView());
+		//Bind render target view
+		renderTargets[0] = cubeMap->getRenderTargetView(i, length);
+		g_DeviceContext->OMSetRenderTargets(1, renderTargets, cubeMap->getDepthStencilView(length));
 
-			cameraTemp = cubeMap->getCamera(i);
-			view = cameraTemp.View();
-			proj = cameraTemp.Proj();
-			
-			BlendState::getInstance()->setState(1, g_DeviceContext);
-			skyBox->render(view * proj, skyBox->getCubeMap());
-			BlendState::getInstance()->setState(0, g_DeviceContext);
-			g_Terrain->render(g_DeviceContext, world, view, proj, cubeMap->getPosition(), *light, skyBox->getCubeMap());
+		cameraTemp = cubeMap->getCamera(i);
+		view = cameraTemp.View();
+		proj = cameraTemp.Proj();
+		viewProj = view * proj;
 
-			BlendState::getInstance()->setState(0, g_DeviceContext);
-			particleSystem->Draw(g_DeviceContext, world, view, proj);
-		//}
-		Switch = !Switch;
+		extractPlanesFromFrustrum(frustrumPlaneEquation, &viewProj);
+
+		skyBox->render(view * proj, skyBox->getCubeMap());
+		g_Terrain->render(g_DeviceContext, world, view, proj, cubeMap->getPosition(), *light, skyBox->getCubeMap(), tessFactor, frustrumPlaneEquation);
+
+		particleSystem->Draw(g_DeviceContext, world, view, proj);
 	}
-	Switch = !Switch;
-	g_DeviceContext->GenerateMips(cubeMap->getCubeMap());
-
+	g_DeviceContext->GenerateMips(cubeMap->getCubeMap(length));
+	
 	//calculate WVP matrix
 	view = camera->View();
 	proj = camera->Proj();
-	
-	renderTargets[0] = g_RenderTargetView;
+	viewProj = view * proj;
+
+	extractPlanesFromFrustrum(frustrumPlaneEquation, &viewProj);
+
+	renderTargets[0] = mainRTV;
 	
 	//clear render target
 	//clear depth info
@@ -496,26 +629,114 @@ HRESULT Render(float deltaTime)
 	g_DeviceContext->OMSetRenderTargets(1, renderTargets, g_DepthStencilView);
 
 	skyBox->update(camera->GetPosition());
-	BlendState::getInstance()->setState(0, g_DeviceContext);
 	skyBox->render(view * proj, skyBox->getCubeMap());
+
+	ID3D11Query* query = NULL;
+	D3D11_QUERY_DESC qd;
+	qd.Query = D3D11_QUERY_PIPELINE_STATISTICS;
+	qd.MiscFlags = 0;
+	if(FAILED(g_Device->CreateQuery(&qd, &query)))
+		return E_FAIL;
+
+	g_DeviceContext->Begin(query);
 	
-	g_Terrain->render(g_DeviceContext, world, view, proj, camera->GetPosition(), *light, skyBox->getCubeMap());
+	g_Terrain->render(g_DeviceContext, world, view, proj, camera->GetPosition(), *light, mainSRV, tessFactor, frustrumPlaneEquation);
+
+	g_DeviceContext->End(query);
+
+	D3D11_QUERY_DATA_PIPELINE_STATISTICS data;
+	while(g_DeviceContext->GetData(query, &data, sizeof(data), 0) != S_OK);
+
+	SAFE_RELEASE(query);
 	
-	//objMesh->billboard(camera->GetPosition());
 	BlendState::getInstance()->setState(1, g_DeviceContext);
-	object->render(view, proj, camera->GetPosition(), *light, cubeMap->getCubeMap());
+	object->render(view, proj, camera->GetPosition(), *light, cubeMap->getCubeMap(length));
 	
 	BlendState::getInstance()->setState(0, g_DeviceContext);
 	particleSystem->Draw(g_DeviceContext, world, view, proj);
 
-	char title[100];
-	sprintf_s(title, sizeof(title),  "%f", 1/deltaTime);
-	SetWindowText(g_hWnd, title);
+	//Gaussian blur
+	renderTargets[0] = g_RenderTargetView;
+	g_DeviceContext->OMSetRenderTargets(1, renderTargets, g_DepthStencilView);
+	gaussianBlur->blur(g_DeviceContext, blurPasses, mainSRV, mainUAV);
 
+	//Fullscreen pass
+	g_DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+	fullscreenQuad->Apply(0);
+	debugTextureShader->SetResource("texture1", mainSRV);
+	debugTextureShader->Apply(0);
+	g_DeviceContext->Draw(4, 0);
+
+	char title[100];
+	int fps = 1/deltaTime;
+	sprintf_s(title, sizeof(title),  "FPS: %d Dynamic cube: %f %d Triangles: %d", fps, length, particleSystem->getTotalNumOfParticles(), data.CInvocations);
+	SetWindowText(g_hWnd, title);
 	if(FAILED(g_SwapChain->Present(0, 0)))
 		return E_FAIL;
 
 	return S_OK;
+}
+
+void extractPlanesFromFrustrum(D3DXVECTOR4* planeEquation, const D3DXMATRIX* viewProj, bool normalize)
+{
+	//Left clipping plane
+	planeEquation[0].x = viewProj->_14 + viewProj->_11;
+	planeEquation[0].y = viewProj->_24 + viewProj->_21;
+	planeEquation[0].z = viewProj->_34 + viewProj->_31;
+	planeEquation[0].w = viewProj->_44 + viewProj->_41;
+
+	//Left clipping plane
+	planeEquation[1].x = viewProj->_14 + viewProj->_11;
+	planeEquation[1].y = viewProj->_24 + viewProj->_21;
+	planeEquation[1].z = viewProj->_34 + viewProj->_31;
+	planeEquation[1].w = viewProj->_44 + viewProj->_41;
+
+	//Left clipping plane
+	planeEquation[2].x = viewProj->_14 + viewProj->_11;
+	planeEquation[2].y = viewProj->_24 + viewProj->_21;
+	planeEquation[2].z = viewProj->_34 + viewProj->_31;
+	planeEquation[2].w = viewProj->_44 + viewProj->_41;
+
+	//Left clipping plane
+	planeEquation[3].x = viewProj->_14 + viewProj->_11;
+	planeEquation[3].y = viewProj->_24 + viewProj->_21;
+	planeEquation[3].z = viewProj->_34 + viewProj->_31;
+	planeEquation[3].w = viewProj->_44 + viewProj->_41;
+
+	//Left clipping plane
+	planeEquation[4].x = viewProj->_14 + viewProj->_11;
+	planeEquation[4].y = viewProj->_24 + viewProj->_21;
+	planeEquation[4].z = viewProj->_34 + viewProj->_31;
+	planeEquation[4].w = viewProj->_44 + viewProj->_41;
+
+	//Left clipping plane
+	planeEquation[5].x = viewProj->_14 + viewProj->_11;
+	planeEquation[5].y = viewProj->_24 + viewProj->_21;
+	planeEquation[5].z = viewProj->_34 + viewProj->_31;
+	planeEquation[5].w = viewProj->_44 + viewProj->_41;
+
+	if(normalize)
+	{
+		normalizePlane(&planeEquation[0]);
+		normalizePlane(&planeEquation[1]);
+		normalizePlane(&planeEquation[2]);
+		normalizePlane(&planeEquation[3]);
+		normalizePlane(&planeEquation[4]);
+		normalizePlane(&planeEquation[5]);
+	}
+}
+
+void normalizePlane(D3DXVECTOR4* planeEquation)
+{
+	float mag;
+	mag = sqrt(planeEquation->x * planeEquation->x +
+			   planeEquation->y * planeEquation->y + 
+			   planeEquation->z * planeEquation->z);
+
+	planeEquation->x = planeEquation->x / mag;
+	planeEquation->y = planeEquation->y / mag;
+	planeEquation->z = planeEquation->z / mag;
+	planeEquation->w = planeEquation->w / mag;
 }
 
 //--------------------------------------------------------------------------------------

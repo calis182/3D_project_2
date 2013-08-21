@@ -85,7 +85,7 @@ TestSystem::~TestSystem()
 {
 }
 
-void TestSystem::render(D3DXMATRIX &world, D3DXMATRIX &view, D3DXMATRIX &proj)
+void TestSystem::render(ID3D11DeviceContext* deviceContext, D3DXMATRIX &world, D3DXMATRIX &view, D3DXMATRIX &proj)
 {
 	shader->SetMatrix("worldMatrix", world);
 	shader->SetMatrix("viewMatrix", view);
@@ -138,11 +138,8 @@ void TestSystem::emitParticles(float time)
 {
 	if(nrOfParticles < maxParticle)
 	{
-		//for(int i = 0; i < 3; i++)
-		{
-			reinterpret_cast<Fire*>(particles.at(nrOfParticles))->init(emitter, D3DXVECTOR3(rand() % 10 - 5, 15, rand() % 10 - 5), 1.0f, time);
-			nrOfParticles++;
-		}
+		reinterpret_cast<Fire*>(particles.at(nrOfParticles))->init(emitter, D3DXVECTOR3(rand() % 10 - 5, 15, rand() % 10 - 5), 1.0f, time);
+		nrOfParticles++;
 	}
 }
 
