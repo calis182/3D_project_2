@@ -118,15 +118,6 @@ void DynamicCubeMap::init()
 		depthTex[i]->Release();
 	}
 
-	//Set up a new viewport
-	/*
-	cubeMapViewport.TopLeftX = 0.0f;
-	cubeMapViewport.TopLeftY = 0.0f;
-	cubeMapViewport.Width = cubeMapSize;
-	cubeMapViewport.Height = cubeMapSize;
-	cubeMapViewport.MinDepth = 0.0f;
-	cubeMapViewport.MaxDepth = 1.0f;*/
-
 	for(int i = 0; i < 4; i++)
 	{
 		cubeMapViewport[i].TopLeftX = 0.0f;
@@ -177,7 +168,7 @@ void DynamicCubeMap::setUpCameras(D3DXVECTOR3 pos)
 		cubeMapCamera[i].setRight(right[i]);
 		cubeMapCamera[i].SetPosition(pos);
 		
-		cubeMapCamera[i].UpdateViewMatrix();
 		cubeMapCamera[i].SetLens(PI * 0.5f, 1.0f, 0.1f, 1000.0f);
+		cubeMapCamera[i].UpdateViewMatrix();
 	}
 }

@@ -142,7 +142,7 @@ HSDataOutput ConstantHS(InputPatch<VSOut, 3> ip, uint PatchID : SV_PrimitiveID)
 	bool viewFrustrumCull = true;
 
 	float f4PlaneTest[4];
-	float heightScale = 15.0f;
+	float heightScale = -10.0f;
 
 	for(int j = 0; j < 4; j++)
 	{

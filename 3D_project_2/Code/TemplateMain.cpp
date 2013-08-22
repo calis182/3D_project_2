@@ -535,7 +535,7 @@ HRESULT Update(float deltaTime)
 	
 	particleSystem->Update(deltaTime, frames, *camera);
 	skyBox->update(camera->GetPosition());
-	
+
 	return S_OK;
 }
 
@@ -685,35 +685,35 @@ void extractPlanesFromFrustrum(D3DXVECTOR4* planeEquation, const D3DXMATRIX* vie
 	planeEquation[0].z = viewProj->_34 + viewProj->_31;
 	planeEquation[0].w = viewProj->_44 + viewProj->_41;
 
-	//Left clipping plane
-	planeEquation[1].x = viewProj->_14 + viewProj->_11;
-	planeEquation[1].y = viewProj->_24 + viewProj->_21;
-	planeEquation[1].z = viewProj->_34 + viewProj->_31;
-	planeEquation[1].w = viewProj->_44 + viewProj->_41;
+	//Right clipping plane
+	planeEquation[1].x = viewProj->_14 - viewProj->_11;
+	planeEquation[1].y = viewProj->_24 - viewProj->_21;
+	planeEquation[1].z = viewProj->_34 - viewProj->_31;
+	planeEquation[1].w = viewProj->_44 - viewProj->_41;
 
-	//Left clipping plane
-	planeEquation[2].x = viewProj->_14 + viewProj->_11;
-	planeEquation[2].y = viewProj->_24 + viewProj->_21;
-	planeEquation[2].z = viewProj->_34 + viewProj->_31;
-	planeEquation[2].w = viewProj->_44 + viewProj->_41;
+	//Top clipping plane
+	planeEquation[2].x = viewProj->_14 - viewProj->_12;
+	planeEquation[2].y = viewProj->_24 - viewProj->_22;
+	planeEquation[2].z = viewProj->_34 - viewProj->_32;
+	planeEquation[2].w = viewProj->_44 - viewProj->_42;
 
-	//Left clipping plane
-	planeEquation[3].x = viewProj->_14 + viewProj->_11;
-	planeEquation[3].y = viewProj->_24 + viewProj->_21;
-	planeEquation[3].z = viewProj->_34 + viewProj->_31;
-	planeEquation[3].w = viewProj->_44 + viewProj->_41;
+	//Bottom clipping plane
+	planeEquation[3].x = viewProj->_14 + viewProj->_12;
+	planeEquation[3].y = viewProj->_24 + viewProj->_22;
+	planeEquation[3].z = viewProj->_34 + viewProj->_32;
+	planeEquation[3].w = viewProj->_44 + viewProj->_42;
 
-	//Left clipping plane
-	planeEquation[4].x = viewProj->_14 + viewProj->_11;
-	planeEquation[4].y = viewProj->_24 + viewProj->_21;
-	planeEquation[4].z = viewProj->_34 + viewProj->_31;
-	planeEquation[4].w = viewProj->_44 + viewProj->_41;
+	//Near clipping plane
+	planeEquation[4].x = viewProj->_13;
+	planeEquation[4].y = viewProj->_23;
+	planeEquation[4].z = viewProj->_33;
+	planeEquation[4].w = viewProj->_43;
 
-	//Left clipping plane
-	planeEquation[5].x = viewProj->_14 + viewProj->_11;
-	planeEquation[5].y = viewProj->_24 + viewProj->_21;
-	planeEquation[5].z = viewProj->_34 + viewProj->_31;
-	planeEquation[5].w = viewProj->_44 + viewProj->_41;
+	//Far clipping plane
+	planeEquation[5].x = viewProj->_14 - viewProj->_13;
+	planeEquation[5].y = viewProj->_24 - viewProj->_23;
+	planeEquation[5].z = viewProj->_34 - viewProj->_33;
+	planeEquation[5].w = viewProj->_44 - viewProj->_43;
 
 	if(normalize)
 	{
