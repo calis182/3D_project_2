@@ -183,3 +183,45 @@ void Camera::UpdateViewMatrix()
 	this->mView(2, 3) = 0.0f;
 	this->mView(3, 3) = 1.0f;
 }
+
+D3DXMATRIX Camera::RenderReflection(float height)
+{
+	D3DXVECTOR3 position;
+
+	// Setup the position of the camera in the world.
+	// For planar reflection invert the Y position of the camera.
+	position.x = position.x;
+	position.y = -position.y + (height * 2.0f);
+	position.z = position.z;
+
+	D3DXVec3Normalize(&this->mLook, &this->mLook);
+	D3DXVec3Cross(&this->mUp, &this->mLook, &this->mRight);
+	D3DXVec3Normalize(&this->mUp, &this->mUp);
+	D3DXVec3Cross(&this->mRight, &this->mUp, &this->mLook);
+
+	float x = -D3DXVec3Dot(&position, &this->mRight);
+	float y = -D3DXVec3Dot(&position, &this->mUp);
+	float z = -D3DXVec3Dot(&position, &this->mLook);
+
+	this->m_reflectionViewMatrix(0, 0) = this->mRight.x;
+	this->m_reflectionViewMatrix(1, 0) = this->mRight.y;
+	this->m_reflectionViewMatrix(2, 0) = this->mRight.z;
+	this->m_reflectionViewMatrix(3, 0) = x;
+
+	this->m_reflectionViewMatrix(0, 1) = this->mUp.x;
+	this->m_reflectionViewMatrix(1, 1) = this->mUp.y;
+	this->m_reflectionViewMatrix(2, 1) = this->mUp.z;
+	this->m_reflectionViewMatrix(3, 1) = y;
+
+	this->m_reflectionViewMatrix(0, 2) = this->mLook.x;
+	this->m_reflectionViewMatrix(1, 2) = this->mLook.y;
+	this->m_reflectionViewMatrix(2, 2) = this->mLook.z;
+	this->m_reflectionViewMatrix(3, 2) = z;
+
+	this->m_reflectionViewMatrix(0, 3) = 0.0f;
+	this->m_reflectionViewMatrix(1, 3) = 0.0f;
+	this->m_reflectionViewMatrix(2, 3) = 0.0f;
+	this->m_reflectionViewMatrix(3, 3) = 1.0f;
+
+	return this->m_reflectionViewMatrix;
+}

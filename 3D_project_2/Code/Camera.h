@@ -20,6 +20,8 @@ private:
 	D3DXMATRIX mView;
 	D3DXMATRIX mProj;
 
+	D3DXMATRIX m_reflectionViewMatrix;
+
 public:
 	Camera();
 	virtual ~Camera();
@@ -57,5 +59,8 @@ public:
 	void Yaw(float angle);
 
 	void UpdateViewMatrix();
+
+	//Temp reflection
+	D3DXMATRIX RenderReflection(float height);
 };
 #endif

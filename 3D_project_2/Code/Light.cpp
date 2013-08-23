@@ -12,3 +12,18 @@ PointLight::PointLight(D3DXVECTOR4 amb, D3DXVECTOR4 spec, D3DXVECTOR4 diff, D3DX
 PointLight::~PointLight()
 {
 }
+
+D3DXVECTOR4 PointLight::getAmbient()const
+{
+	return this->ambient;
+}
+
+D3DXVECTOR4 PointLight::getDiffuse()const
+{
+	return this->diffuse;
+}
+
+D3DXVECTOR3 PointLight::getPosition()const
+{
+	return this->position;
+}

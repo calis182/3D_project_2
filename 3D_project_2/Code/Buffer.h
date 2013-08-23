@@ -62,6 +62,7 @@ public:
 	HRESULT Apply(UINT32 misc = 0);
 
 	ID3D11Buffer* GetBufferPointer();
+	
 	UINT32 GetVertexSize();
 	UINT32 GetElementCount();
 };

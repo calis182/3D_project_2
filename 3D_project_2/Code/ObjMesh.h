@@ -11,12 +11,12 @@
 	D3DXVECTOR3 normal;
 	D3DXVECTOR2 tex;
 
-	Vertex()
-	{
-		pos = D3DXVECTOR3(0, 0, 0);
-		normal = D3DXVECTOR3(0, 0, 0);
-		tex = D3DXVECTOR2(0, 0);
-	}
+	//Vertex()
+	//{
+	//	pos = D3DXVECTOR3(0, 0, 0);
+	//	normal = D3DXVECTOR3(0, 0, 0);
+	//	tex = D3DXVECTOR2(0, 0);
+	//}
 	};
 
 class ObjMesh

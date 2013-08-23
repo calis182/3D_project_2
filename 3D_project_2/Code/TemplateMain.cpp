@@ -26,6 +26,8 @@
 #include "DynamicCubeMap.h"
 #include "BlendState.h"
 
+#include "WaterShader.h"
+
 //--------------------------------------------------------------------------------------
 // Global Variables
 //--------------------------------------------------------------------------------------
@@ -42,6 +44,14 @@ ID3D11DeviceContext*	g_DeviceContext			= NULL;
 D3D11_VIEWPORT vp;
 
 Shader* debugTextureShader;
+Shader* r_Shader;
+WaterShader* m_WaterShader;
+float m_waterHeight;
+float m_waterTranslation;
+ID3D11ShaderResourceView* refractionTexture;
+ID3D11ShaderResourceView* reflectionTexture;
+ID3D11RenderTargetView* refractionTargetView;
+ID3D11RenderTargetView* reflectionTargetView;
 
 Terrain* g_Terrain = NULL;
 Input* input = NULL;
@@ -56,6 +66,9 @@ ObjMesh* object;
 
 SkyBox* skyBox;
 DynamicCubeMap* cubeMap;
+const float waterHeight = 5.0f;        
+
+
 
 __int64 frames = 0;
 
@@ -68,7 +81,9 @@ HRESULT				Render(float deltaTime);
 HRESULT				Update(float deltaTime);
 HRESULT				InitDirect3D();
 char*				FeatureLevelToString(D3D_FEATURE_LEVEL featureLevel);
-
+bool RenderRefractionToTexture();
+bool RenderReflectonToTexture();
+bool RenderScene();
 
 //--------------------------------------------------------------------------------------
 // Entry point to the program. Initializes everything and goes into a message processing 
@@ -125,7 +140,9 @@ int WINAPI wWinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdL
 	delete light;
 	delete cubeMap;
 	delete object;
-	
+	m_WaterShader->Shutdown();
+	delete m_WaterShader;
+	BlendState::getInstance()->shutdown();
 	delete debugTextureShader;
 
 	g_Device->Release();
@@ -366,6 +383,29 @@ HRESULT InitDirect3D()
 
 	BlendState::getInstance()->createBlendState(g_Device);
 
+	bool result;
+
+	// Create the water shader object.
+	m_WaterShader = new WaterShader;
+	if(!m_WaterShader)
+	{
+		return false;
+	}
+
+	// Initialize the water shader object.
+	result = m_WaterShader->Initialize(g_Device, g_DeviceContext, g_hWnd);
+	if(!result)
+	{
+		MessageBox(g_hWnd, "Could not initialize the water shader object.", "Error", MB_OK);
+		return false;
+	}
+	result = m_WaterShader->InitializeShader(g_Device, g_DeviceContext);
+	// Set the height of the water.
+	m_waterHeight = 2.75f;
+
+	// Initialize the position of the water.
+	m_waterTranslation = 0.0f;
+
 	return S_OK;
 }
 
@@ -430,6 +470,13 @@ HRESULT Update(float deltaTime)
 	particleSystem->Update(deltaTime, frames, *camera);
 	skyBox->update(camera->GetPosition());
 
+	// Update the position of the water to simulate motion.
+	m_waterTranslation += 0.001f;
+	if(m_waterTranslation > 1.0f)
+	{
+		m_waterTranslation -= 1.0f;
+	}
+
 	return S_OK;
 }
 
@@ -452,7 +499,7 @@ HRESULT Render(float deltaTime)
 
 	skyBox->update(cubeMap->getPosition());
 
-	
+
 	BlendState::getInstance()->setState(0, g_DeviceContext);
 	//Render for all 6 cameras 
 	for(int i = 0; i < 6; i++)
@@ -511,6 +558,11 @@ HRESULT Render(float deltaTime)
 	BlendState::getInstance()->setState(0, g_DeviceContext);
 	particleSystem->Draw(g_DeviceContext, world, view, proj);
 
+	RenderRefractionToTexture();
+	RenderReflectonToTexture();
+	RenderScene();
+
+
 	char title[100];
 	sprintf_s(title, sizeof(title),  "%f", 1/deltaTime);
 	SetWindowText(g_hWnd, title);
@@ -519,6 +571,113 @@ HRESULT Render(float deltaTime)
 		return E_FAIL;
 
 	return S_OK;
+}
+
+
+bool RenderRefractionToTexture()
+{
+	D3DXVECTOR4 clipPlane;
+	D3DXMATRIX world, view, proj;
+	bool result;
+
+	//Setup a clipping plane based haeight of the water to clip everything above it.
+	clipPlane = D3DXVECTOR4(0.0f, -1.0f, 0.0f, waterHeight + 0.1f);
+	
+	//Set the render target to be the refraction render to texture.
+	g_DeviceContext->OMSetRenderTargets( 1, &refractionTargetView, g_DepthStencilView );
+	
+	float color[4];
+	color[0] = 0;
+	color[1] = 0;
+	color[2] = 0;
+	color[3] = 1;
+	//Clear the  to texture.
+	g_DeviceContext->ClearRenderTargetView( refractionTargetView, color);
+
+	D3DXMatrixIdentity(&world);
+	view = camera->View();
+	proj = camera->Proj();
+
+	D3DXMatrixTranslation(&world, 0, 2, 0);
+	
+	skyBox->render(view * proj, skyBox->getCubeMap());
+
+	m_WaterShader->SetRefractionParameters(world, view, proj, clipPlane, light->getAmbient(), light->getDiffuse(), light->getPosition());
+	m_WaterShader->RenderRefraction(g_Device, g_DeviceContext, refractionTexture);
+
+	// Reset the render target back to the original back buffer and not the render to texture anymore.
+	g_DeviceContext->OMSetRenderTargets(1, &refractionTargetView, g_DepthStencilView);
+
+	return true;
+}
+
+bool RenderReflectonToTexture()
+{
+	D3DXMATRIX reflectionMatrix, world, proj, view;
+	bool result;
+
+	//Set the render target to be the reflection render to texture.
+	g_DeviceContext->OMSetRenderTargets( 1, &reflectionTargetView, g_DepthStencilView );
+
+	float color[4];
+	color[0] = 0;
+	color[1] = 0;
+	color[2] = 0;
+	color[3] = 1;
+	//Clear the reflection to texture.
+	g_DeviceContext->ClearRenderTargetView( reflectionTargetView, color);
+
+	// Use the camera to render the reflection and create a reflection view matrix.
+	// Get the camera reflection view matrix instead of the normal view matrix.
+	reflectionMatrix = camera->RenderReflection(m_waterHeight);
+
+	D3DXMatrixIdentity(&world);
+	view = camera->View();
+	proj = camera->Proj();
+
+	D3DXMatrixTranslation(&world, 0, 6, 8);
+
+	g_Terrain->render(g_DeviceContext, world, view, proj, camera->GetPosition(), *light, skyBox->getCubeMap());
+	
+	m_WaterShader->SetReflectionParameters(world, reflectionMatrix, proj, light->getAmbient(), light->getDiffuse(), light->getPosition());
+	m_WaterShader->RenderReflection(g_Device, g_DeviceContext, reflectionTexture);
+	
+	// Reset the render target back to the original back buffer and not the render to texture anymore.
+	g_DeviceContext->OMSetRenderTargets(1, &reflectionTargetView, g_DepthStencilView);
+
+	return true;
+}
+
+bool RenderScene()
+{
+	D3DXMATRIX world, view, proj, reflectionMatrix;
+	bool result;
+
+	float color[4];
+	
+	// Setup the color to clear the buffer to.
+	color[0] = 0.0f;
+	color[1] = 0.0f;
+	color[2] = 0.0f;
+	color[3] = 1.0f;
+
+
+	//Set the render target to be the reflection render to texture.
+	g_DeviceContext->OMSetRenderTargets( 1, &g_RenderTargetView, g_DepthStencilView );
+    
+	D3DXMatrixIdentity(&world);
+	view = camera->View();
+	proj = camera->Proj();
+
+	reflectionMatrix = camera->RenderReflection(m_waterHeight);
+
+	D3DXMatrixTranslation(&world, 0, m_waterHeight, 0);
+	
+	BlendState::getInstance()->setState(0, g_DeviceContext);
+	m_WaterShader->SetWaterParameters(world, reflectionMatrix, view, proj, light->getAmbient(), light->getDiffuse(), light->getPosition(), m_waterTranslation, 0.01f);
+	m_WaterShader->RenderWater(g_Device, g_DeviceContext, refractionTexture, reflectionTexture);
+	
+	return true;
 }
 
 //--------------------------------------------------------------------------------------

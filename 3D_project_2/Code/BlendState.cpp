@@ -11,8 +11,7 @@ BlendState::BlendState()
 
 BlendState::~BlendState()
 {
-	transparentBS[0]->Release();
-	transparentBS[1]->Release();
+
 }
 
 void BlendState::shutdown()
