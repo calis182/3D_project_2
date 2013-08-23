@@ -68,6 +68,8 @@ ID3D11RenderTargetView* refractionTargetView;
 ID3D11RenderTargetView* reflectionTargetView;
 ID3D11DepthStencilView* waterDepthStencilView;
 ID3D11Texture2D* waterDepthStencil;
+ID3D11Texture2D* refractionTexture2D;
+ID3D11Texture2D* reflectionTexture2D;
 
 Terrain* g_Terrain = NULL;
 Input* input = NULL;
@@ -378,9 +380,7 @@ HRESULT InitDirect3D()
 	if( FAILED(hr) )
 		return hr;
 
-	hr = g_Device->CreateRenderTargetView( pBackBuffer, NULL, &refractionTargetView );
-	hr = g_Device->CreateRenderTargetView( pBackBuffer, NULL, &reflectionTargetView );
-
+	
 	pBackBuffer->Release();
 	if( FAILED(hr) )
 		return hr;
@@ -445,6 +445,19 @@ HRESULT InitDirect3D()
 	hr = g_Device->CreateShaderResourceView(mainTexture2D, NULL, &mainSRV);
 	hr = g_Device->CreateUnorderedAccessView(mainTexture2D, NULL, &mainUAV);
 
+	hr = g_Device->CreateTexture2D(&texDesc, NULL, &refractionTexture2D);
+	hr = g_Device->CreateShaderResourceView(refractionTexture2D, NULL, &refractionTexture);
+	hr = g_Device->CreateTexture2D(&texDesc, NULL, &reflectionTexture2D);
+	hr = g_Device->CreateShaderResourceView(reflectionTexture2D, NULL, &reflectionTexture);
+
+
+	hr = g_Device->CreateRenderTargetView( refractionTexture2D, NULL, &refractionTargetView );
+	hr = g_Device->CreateRenderTargetView( reflectionTexture2D, NULL, &reflectionTargetView );
+
+	if(FAILED(hr))
+	{
+		return false;
+	}
 	struct Vertex
 	{
 		D3DXVECTOR3 pos;
@@ -797,6 +810,9 @@ bool RenderRefractionToTexture()
 
 	D3DXMatrixTranslation(&world, 0, 2, 0);
 	
+	g_Terrain->render(g_DeviceContext, world, view, proj, camera->GetPosition(), *light, mainSRV, 16, frustrumPlaneEquation);
+	skyBox->render(view * proj, skyBox->getCubeMap());
+	particleSystem->Draw(g_DeviceContext, world, view, proj);
 
 	m_WaterShader->SetRefractionParameters(world, view, proj, clipPlane, light->getAmbient(), light->getDiffuse(), light->getPosition());
 	m_WaterShader->RenderRefraction(g_Device, g_DeviceContext, refractionTexture);
@@ -833,8 +849,10 @@ bool RenderReflectonToTexture()
 
 	D3DXMatrixTranslation(&world, 0, 6, 8);
 	g_Terrain->render(g_DeviceContext, world, view, proj, camera->GetPosition(), *light, mainSRV, 16, frustrumPlaneEquation);
+	skyBox->render(view * proj, skyBox->getCubeMap());
+	particleSystem->Draw(g_DeviceContext, world, view, proj);
 
-	
+
 	m_WaterShader->SetReflectionParameters(world, reflectionMatrix, proj, light->getAmbient(), light->getDiffuse(), light->getPosition());
 	m_WaterShader->RenderReflection(g_Device, g_DeviceContext, reflectionTexture);
 	
