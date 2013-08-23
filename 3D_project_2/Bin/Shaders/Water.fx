@@ -133,7 +133,7 @@ float4 WaterPixelShader(PixelInputType input) : SV_TARGET
 	//Combine the reflection and refraction results for the final color.
 	color = lerp(reflectionColor, refractionColor, 0.6f);
 
-	return float4(1,1,1, 1);
+	return color;
 
 }
 

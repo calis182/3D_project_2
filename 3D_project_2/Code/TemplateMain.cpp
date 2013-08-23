@@ -66,6 +66,8 @@ ID3D11ShaderResourceView* refractionTexture;
 ID3D11ShaderResourceView* reflectionTexture;
 ID3D11RenderTargetView* refractionTargetView;
 ID3D11RenderTargetView* reflectionTargetView;
+ID3D11DepthStencilView* waterDepthStencilView;
+ID3D11Texture2D* waterDepthStencil;
 
 Terrain* g_Terrain = NULL;
 Input* input = NULL;
@@ -81,7 +83,7 @@ ObjMesh* object;
 SkyBox* skyBox;
 DynamicCubeMap* cubeMap;
 
-const float waterHeight = 5.0f;        
+const float waterHeight = 2.75f;        
 
 GaussianBlur* gaussianBlur;
 
@@ -371,6 +373,35 @@ HRESULT InitDirect3D()
 	if( FAILED(hr) )
 		return hr;
 
+	// Create a render target view
+	hr = g_SwapChain->GetBuffer( 0, __uuidof( ID3D11Texture2D ), (LPVOID*)&pBackBuffer);
+	if( FAILED(hr) )
+		return hr;
+
+	hr = g_Device->CreateRenderTargetView( pBackBuffer, NULL, &refractionTargetView );
+	hr = g_Device->CreateRenderTargetView( pBackBuffer, NULL, &reflectionTargetView );
+
+	pBackBuffer->Release();
+	if( FAILED(hr) )
+		return hr;
+
+	// Create depth stencil texture
+	descDepth.Width = SCREEN_WIDTH;
+	descDepth.Height = SCREEN_HEIGHT;
+	descDepth.MipLevels = 1;
+	descDepth.ArraySize = 1;
+	descDepth.Format = DXGI_FORMAT_D32_FLOAT;
+	descDepth.SampleDesc.Count = 1;
+	descDepth.SampleDesc.Quality = 0;
+	descDepth.Usage = D3D11_USAGE_DEFAULT;
+	descDepth.BindFlags = D3D11_BIND_DEPTH_STENCIL;
+	descDepth.CPUAccessFlags = 0;
+	descDepth.MiscFlags = 0;
+	hr = g_Device->CreateTexture2D( &descDepth, NULL, &waterDepthStencil );
+	if( FAILED(hr) )
+		return hr;
+
+
 	// Create the depth stencil view
 	D3D11_DEPTH_STENCIL_VIEW_DESC descDSV;
 	ZeroMemory(&descDSV, sizeof(descDSV));
@@ -378,6 +409,9 @@ HRESULT InitDirect3D()
 	descDSV.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
 	descDSV.Texture2D.MipSlice = 0;
 	hr = g_Device->CreateDepthStencilView( g_DepthStencil, &descDSV, &g_DepthStencilView );
+	if( FAILED(hr) )
+		return hr;
+	hr = g_Device->CreateDepthStencilView( waterDepthStencil, &descDSV, &waterDepthStencilView );
 	if( FAILED(hr) )
 		return hr;
 
@@ -747,8 +781,8 @@ bool RenderRefractionToTexture()
 	clipPlane = D3DXVECTOR4(0.0f, -1.0f, 0.0f, waterHeight + 0.1f);
 	
 	//Set the render target to be the refraction render to texture.
-	g_DeviceContext->OMSetRenderTargets( 1, &refractionTargetView, g_DepthStencilView );
-	
+	g_DeviceContext->OMSetRenderTargets( 1, &refractionTargetView, waterDepthStencilView );
+	g_DeviceContext->ClearDepthStencilView(waterDepthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 	float color[4];
 	color[0] = 0;
 	color[1] = 0;
@@ -763,13 +797,12 @@ bool RenderRefractionToTexture()
 
 	D3DXMatrixTranslation(&world, 0, 2, 0);
 	
-	skyBox->render(view * proj, skyBox->getCubeMap());
 
 	m_WaterShader->SetRefractionParameters(world, view, proj, clipPlane, light->getAmbient(), light->getDiffuse(), light->getPosition());
 	m_WaterShader->RenderRefraction(g_Device, g_DeviceContext, refractionTexture);
 
 	// Reset the render target back to the original back buffer and not the render to texture anymore.
-	g_DeviceContext->OMSetRenderTargets(1, &refractionTargetView, g_DepthStencilView);
+	g_DeviceContext->OMSetRenderTargets(1, &refractionTargetView, waterDepthStencilView);
 
 	return true;
 }
@@ -780,8 +813,8 @@ bool RenderReflectonToTexture()
 	bool result;
 
 	//Set the render target to be the reflection render to texture.
-	g_DeviceContext->OMSetRenderTargets( 1, &reflectionTargetView, g_DepthStencilView );
-
+	g_DeviceContext->OMSetRenderTargets( 1, &reflectionTargetView, waterDepthStencilView );
+	g_DeviceContext->ClearDepthStencilView(waterDepthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 	float color[4];
 	color[0] = 0;
 	color[1] = 0;
@@ -799,14 +832,14 @@ bool RenderReflectonToTexture()
 	proj = camera->Proj();
 
 	D3DXMatrixTranslation(&world, 0, 6, 8);
+	g_Terrain->render(g_DeviceContext, world, view, proj, camera->GetPosition(), *light, mainSRV, 16, frustrumPlaneEquation);
 
-	g_Terrain->render(g_DeviceContext, world, view, proj, camera->GetPosition(), *light, skyBox->getCubeMap(), 16, frustrumPlaneEquation);
 	
 	m_WaterShader->SetReflectionParameters(world, reflectionMatrix, proj, light->getAmbient(), light->getDiffuse(), light->getPosition());
 	m_WaterShader->RenderReflection(g_Device, g_DeviceContext, reflectionTexture);
 	
 	// Reset the render target back to the original back buffer and not the render to texture anymore.
-	g_DeviceContext->OMSetRenderTargets(1, &reflectionTargetView, g_DepthStencilView);
+	g_DeviceContext->OMSetRenderTargets(1, &reflectionTargetView, waterDepthStencilView);
 
 	return true;
 }
@@ -826,7 +859,7 @@ bool RenderScene()
 
 
 	//Set the render target to be the reflection render to texture.
-	g_DeviceContext->OMSetRenderTargets( 1, &g_RenderTargetView, g_DepthStencilView );
+	g_DeviceContext->OMSetRenderTargets( 1, &mainRTV, g_DepthStencilView );
     
 	D3DXMatrixIdentity(&world);
 	view = camera->View();
@@ -836,7 +869,6 @@ bool RenderScene()
 
 	D3DXMatrixTranslation(&world, 0, m_waterHeight, 0);
 	
-	BlendState::getInstance()->setState(0, g_DeviceContext);
 	m_WaterShader->SetWaterParameters(world, reflectionMatrix, view, proj, light->getAmbient(), light->getDiffuse(), light->getPosition(), m_waterTranslation, 0.01f);
 	m_WaterShader->RenderWater(g_Device, g_DeviceContext, refractionTexture, reflectionTexture);
 	
