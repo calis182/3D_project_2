@@ -26,12 +26,13 @@
 #include "DynamicCubeMap.h"
 #include "BlendState.h"
 #include "GaussianBlur.h"
+#include "WaterShader.h"
 
 void renderCubeMap(void* param);
 void extractPlanesFromFrustrum(D3DXVECTOR4* planeEquation, const D3DXMATRIX* viewProj, bool normalize = true);
 void normalizePlane(D3DXVECTOR4* planeEquation);
 
-#include "WaterShader.h"
+
 
 //--------------------------------------------------------------------------------------
 // Global Variables
@@ -799,7 +800,7 @@ bool RenderReflectonToTexture()
 
 	D3DXMatrixTranslation(&world, 0, 6, 8);
 
-	g_Terrain->render(g_DeviceContext, world, view, proj, camera->GetPosition(), *light, skyBox->getCubeMap());
+	g_Terrain->render(g_DeviceContext, world, view, proj, camera->GetPosition(), *light, skyBox->getCubeMap(), 16, frustrumPlaneEquation);
 	
 	m_WaterShader->SetReflectionParameters(world, reflectionMatrix, proj, light->getAmbient(), light->getDiffuse(), light->getPosition());
 	m_WaterShader->RenderReflection(g_Device, g_DeviceContext, reflectionTexture);
@@ -840,6 +841,7 @@ bool RenderScene()
 	m_WaterShader->RenderWater(g_Device, g_DeviceContext, refractionTexture, reflectionTexture);
 	
 	return true;
+}
 
 void extractPlanesFromFrustrum(D3DXVECTOR4* planeEquation, const D3DXMATRIX* viewProj, bool normalize)
 {
