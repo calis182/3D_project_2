@@ -53,7 +53,7 @@ bool HeightMap::loadRaw(int w, int h, string filename, float heightScale, float 
 		}
 	}
 
-	filter3x3();
+	//filter3x3();
 
 	return true;
 }
@@ -107,5 +107,5 @@ float HeightMap::sampleHeight3x3(int i, int j)
 
 float HeightMap::getData(int x, int z)
 {
-	return heightMapData[x][z];
+	return heightMapData[x][height-z];
 }

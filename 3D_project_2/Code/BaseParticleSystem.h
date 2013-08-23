@@ -4,16 +4,15 @@
 #include "stdafx.h"
 #include "Particle.h"
 
-
 class BaseParticleSystem
 {
 public:
 	BaseParticleSystem(ID3D11Device *device, ID3D11DeviceContext *deviceContext, D3DXVECTOR3 emit, int maxParticle, char* textureFilename);
 	~BaseParticleSystem();
 
-	virtual void render(D3DXMATRIX& world, D3DXMATRIX& view, D3DXMATRIX& proj) = 0;
+	virtual void render(ID3D11DeviceContext* deviceContext, D3DXMATRIX& world, D3DXMATRIX& view, D3DXMATRIX& proj) = 0;
 	virtual void update(float dt, float frames, Camera& cam) = 0;
-	
+
 	int getNumberOfParticles() { return nrOfParticles; }
 
 protected:
@@ -60,9 +59,6 @@ protected:
 	ID3D11DeviceContext* deviceContext;
 
 	TextureClass* texture;
-
-	Camera* camera;
-
 };
 
 #endif

@@ -3,10 +3,14 @@
 
 #include "stdafx.h"
 
+HRESULT CompileShaderFromFile(char* filename, LPCSTR szEntryPoint, LPCSTR szShaderModel, ID3DBlob** ppBlobOut, const D3D_SHADER_MACRO* pDefines = NULL);
+
 class Shader
 {
 	ID3D11Device*			mDevice;
 	ID3D11DeviceContext*	mImmediateContext;
+public:
+	
 	ID3D11InputLayout*		m_pInputLayout;
 
 	ID3DX11Effect* m_pEffect;
@@ -20,6 +24,7 @@ public:
 		const D3D11_INPUT_ELEMENT_DESC* inputElementDesc, unsigned int numElements);
 
 	HRESULT Apply(unsigned int pass);
+	HRESULT Apply(unsigned int pass, ID3D11DeviceContext* deferredContext);
 
 	void SetMatrix(char* variable, D3DXMATRIX& mat);
 	void SetFloat(char* variable, float value);

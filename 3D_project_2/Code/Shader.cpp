@@ -1,4 +1,6 @@
 #include "Shader.h"
+#include <iostream>
+using namespace std;
 
 Shader::Shader()
 {
@@ -39,7 +41,7 @@ HRESULT Shader::Init(ID3D11Device* device, ID3D11DeviceContext* deviceContext, c
 	hr = D3DX11CompileFromFile(
 		filename,
 		NULL,
-		NULL,
+		NULL, 
 		"",
 		"fx_5_0",
 		dwShaderFlags,
@@ -112,6 +114,23 @@ HRESULT Shader::Apply(unsigned int pass)
 	return E_FAIL;
 }
 
+HRESULT Shader::Apply(unsigned int pass, ID3D11DeviceContext* deferredContext)
+{
+	ID3DX11EffectPass* p = m_pTechnique->GetPassByIndex(pass);
+	if(p)
+	{
+		p->Apply(0, deferredContext);
+
+		if(m_pInputLayout)
+		{
+			//deferredContext->IASetInputLayout(m_pInputLayout);
+		}
+		return S_OK;
+	}
+
+	return E_FAIL;
+}
+
 void Shader::SetFloat(char* variable, float value)
 {
 	m_pEffect->GetVariableByName(variable)->AsScalar()->SetFloat(value);
@@ -150,4 +169,47 @@ void Shader::SetBool(char* variable, bool value)
 void Shader::SetRawData(char* variable, void* data, size_t size)
 {
 	m_pEffect->GetVariableByName(variable)->SetRawValue(data, 0, (UINT)size);
+}
+
+HRESULT CompileShaderFromFile(char* filename, LPCSTR szEntryPoint, LPCSTR szShaderModel, ID3DBlob** ppBlobOut, const D3D_SHADER_MACRO* pDefines)
+{
+    HRESULT hr = S_OK;
+
+    DWORD dwShaderFlags = D3D10_SHADER_ENABLE_STRICTNESS;
+#if defined( DEBUG ) || defined( _DEBUG )
+    // Set the D3DCOMPILE_DEBUG flag to embed debug information in the shaders.
+    // Setting this flag improves the shader debugging experience, but still allows 
+    // the shaders to be optimized and to run exactly the way they will run in 
+    // the release configuration of this program.
+    //dwShaderFlags |= D3DCOMPILE_DEBUG;
+#endif
+
+    // compile the shader
+    ID3DBlob* pErrorBlob = NULL;
+	hr = D3DX11CompileFromFile(
+		filename,
+		NULL,
+		NULL, 
+		szEntryPoint,
+		szShaderModel,
+		dwShaderFlags,
+		NULL,
+		NULL,
+		ppBlobOut,
+		&pErrorBlob,
+		NULL
+		);
+
+	//OutputDebugString(DXGetErrorString(hr));
+
+    if( FAILED(hr) )
+    {
+        if( pErrorBlob != NULL )
+            OutputDebugStringA( (char*)pErrorBlob->GetBufferPointer() );
+        SAFE_RELEASE( pErrorBlob );
+        return hr;
+    }
+    SAFE_RELEASE( pErrorBlob );
+
+    return S_OK;   
 }

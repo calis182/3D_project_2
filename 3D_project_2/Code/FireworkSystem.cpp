@@ -88,7 +88,7 @@ FireworkSystem::~FireworkSystem()
 	delete shader;
 }
 
-void FireworkSystem::render(D3DXMATRIX &world, D3DXMATRIX &view, D3DXMATRIX &proj)
+void FireworkSystem::render(ID3D11DeviceContext* deviceContext, D3DXMATRIX &world, D3DXMATRIX &view, D3DXMATRIX &proj)
 {
 	shader->SetMatrix("worldMatrix", world);
 	shader->SetMatrix("viewMatrix", view);
@@ -107,7 +107,7 @@ void FireworkSystem::update(float dt, float frames, Camera& cam)
 {
 	for(int i = 0; i < nrOfParticles; i++)
 		static_cast<Fire*>(particles.at(i))->update(dt, frames);
-
+	
 	//remove particles
 	killParticles(frames, dt);
 
