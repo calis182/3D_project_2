@@ -225,11 +225,30 @@ PSSceneIn DS(HSDataOutput input, float3 UVW : SV_DomainLocation, const OutputPat
 	return output;
 }
 
+float3 filterNormal(float2 uv, float texelSize, float texelAspect)
+{
+	float4 h;
+	
+	h[0] = gHeightMap.Sample(ss, uv + texelSize*float2( 0,-1)).r * texelAspect;
+	h[1] = gHeightMap.Sample(ss, uv + texelSize*float2(-1, 0)).r * texelAspect;
+	h[2] = gHeightMap.Sample(ss, uv + texelSize*float2( 1, 0)).r * texelAspect;
+	h[3] = gHeightMap.Sample(ss, uv + texelSize*float2( 0, 1)).r * texelAspect;
+	
+	float3 n;
+	n.z = h[0] - h[3];
+	n.x = h[1] - h[2];
+	n.y = 2;
+	
+	return normalize(n);
+}
+
 //-----------------------------------------------------------------------------------------
 // PixelShader: PSSceneMain
 //-----------------------------------------------------------------------------------------
 float4 PSScene(PSSceneIn input) : SV_Target
 {
+	input.normal = filterNormal(input.uv, 0.1, 0.1f);
+
 	//Blendmap
 	int repeat = 20;
 	float4 c0 = gTexture2.Sample(ss, input.uv*repeat);
@@ -273,6 +292,7 @@ float4 PSScene(PSSceneIn input) : SV_Target
 
 	texColor += diffuse + light.ambient + spec;
 
+	//return float4(input.normal, 1);;
 	return texColor;
 }
 
