@@ -133,7 +133,7 @@ float4 WaterPixelShader(PixelInputType input) : SV_TARGET
 	//Combine the reflection and refraction results for the final color.
 	color = lerp(reflectionColor, refractionColor, 0.6f);
 
-	return float4(1,1,1, 1);
+	return float4(1, 1, 1, 1);
 
 }
 
@@ -146,6 +146,9 @@ technique11 BasicTech
     {
 	// Set VS, GS, and PS
         SetVertexShader(CompileShader(vs_4_0, WaterVertexShader()));
+		SetHullShader(NULL);
+		SetDomainShader(NULL);
+		SetGeometryShader(NULL);
         SetPixelShader(CompileShader(ps_4_0, WaterPixelShader()));
 	    
 	SetRasterizerState( NoCulling );

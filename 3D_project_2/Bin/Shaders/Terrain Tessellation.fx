@@ -201,7 +201,7 @@ PSSceneIn DS(HSDataOutput input, float3 UVW : SV_DomainLocation, const OutputPat
 	float3 finalPos = UVW.x * tri[0].pos
 					+ UVW.y * tri[1].pos
 					+ UVW.z * tri[2].pos;
-					
+
 	output.posW = UVW.x * tri[0].posW
 				+ UVW.y * tri[1].posW
 				+ UVW.z * tri[2].posW;
