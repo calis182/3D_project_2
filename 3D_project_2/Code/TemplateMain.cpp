@@ -85,7 +85,7 @@ ObjMesh* object;
 SkyBox* skyBox;
 DynamicCubeMap* cubeMap;
 
-const float waterHeight = 2.75f;        
+const float waterHeight = 10.0f;        
 
 GaussianBlur* gaussianBlur;
 
@@ -560,7 +560,7 @@ HRESULT InitDirect3D()
 	}
 	result = m_WaterShader->InitializeShader(g_Device, g_DeviceContext);
 	// Set the height of the water.
-	m_waterHeight = 2.75f;
+	m_waterHeight = 5.0f;
 
 	// Initialize the position of the water.
 	m_waterTranslation = 0.0f;
@@ -788,7 +788,6 @@ bool RenderRefractionToTexture()
 {
 	D3DXVECTOR4 clipPlane;
 	D3DXMATRIX world, view, proj;
-	bool result;
 
 	//Setup a clipping plane based haeight of the water to clip everything above it.
 	clipPlane = D3DXVECTOR4(0.0f, -1.0f, 0.0f, waterHeight + 0.1f);
@@ -808,7 +807,6 @@ bool RenderRefractionToTexture()
 	view = camera->View();
 	proj = camera->Proj();
 
-	D3DXMatrixTranslation(&world, 0, 2, 0);
 	
 	g_Terrain->render(g_DeviceContext, world, view, proj, camera->GetPosition(), *light, mainSRV, 16, frustrumPlaneEquation);
 	skyBox->render(view * proj, skyBox->getCubeMap());
@@ -826,7 +824,7 @@ bool RenderRefractionToTexture()
 bool RenderReflectonToTexture()
 {
 	D3DXMATRIX reflectionMatrix, world, proj, view;
-	bool result;
+
 
 	//Set the render target to be the reflection render to texture.
 	g_DeviceContext->OMSetRenderTargets( 1, &reflectionTargetView, waterDepthStencilView );
@@ -847,7 +845,7 @@ bool RenderReflectonToTexture()
 	view = camera->View();
 	proj = camera->Proj();
 
-	D3DXMatrixTranslation(&world, 0, 6, 8);
+	
 	g_Terrain->render(g_DeviceContext, world, view, proj, camera->GetPosition(), *light, mainSRV, 16, frustrumPlaneEquation);
 	skyBox->render(view * proj, skyBox->getCubeMap());
 	particleSystem->Draw(g_DeviceContext, world, view, proj);
@@ -865,8 +863,6 @@ bool RenderReflectonToTexture()
 bool RenderScene()
 {
 	D3DXMATRIX world, view, proj, reflectionMatrix;
-	bool result;
-
 	float color[4];
 	
 	// Setup the color to clear the buffer to.

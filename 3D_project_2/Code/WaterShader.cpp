@@ -21,13 +21,13 @@ bool WaterShader::Initialize(ID3D11Device* device, ID3D11DeviceContext* deviceCo
 {
 
 	Vertex waterModel[] = {
-	{D3DXVECTOR3(-128, 10, -128), D3DXVECTOR3(0, 1, 0), D3DXVECTOR2(0, 0)},
-	{D3DXVECTOR3(-128, 10, 128), D3DXVECTOR3(0, 1, 0), D3DXVECTOR2(0, 1)},
-	{D3DXVECTOR3(128, 10, 128), D3DXVECTOR3(0, 1, 0), D3DXVECTOR2(1,1)},
+	{D3DXVECTOR3(-128, 5, 128), D3DXVECTOR3(0, 1, 0), D3DXVECTOR2(0, 0)},
+	{D3DXVECTOR3(128, 5, -128), D3DXVECTOR3(0, 1, 0), D3DXVECTOR2(1, 1)},
+	{D3DXVECTOR3(-128, 5, -128), D3DXVECTOR3(0, 1, 0), D3DXVECTOR2(0,1)},
 		
-	{D3DXVECTOR3(-128, 10, -128), D3DXVECTOR3(0, 1, 0), D3DXVECTOR2(0, 0)},
-	{D3DXVECTOR3(128, 10, -128), D3DXVECTOR3(0, 1, 0), D3DXVECTOR2(1,0)},
-	{D3DXVECTOR3(128, 10, 128), D3DXVECTOR3(0, 1, 0), D3DXVECTOR2(1,1)}
+	{D3DXVECTOR3(128, 5, 128), D3DXVECTOR3(0, 1, 0), D3DXVECTOR2(1, 0)},
+	{D3DXVECTOR3(128, 5, -128), D3DXVECTOR3(0, 1, 0), D3DXVECTOR2(1,1)},
+	{D3DXVECTOR3(-128, 5, 128), D3DXVECTOR3(0, 1, 0), D3DXVECTOR2(0,0)}
 	};
 	
 	BUFFER_INIT_DESC waterDesc;
@@ -96,6 +96,8 @@ bool WaterShader::InitializeShader(ID3D11Device* device, ID3D11DeviceContext* de
 		
 	normalMap = new TextureClass();
 	normalMap->init(device, "..\\Shaders\\water01.dds");
+
+
 
 	return true;
 }
@@ -287,12 +289,11 @@ void WaterShader::RenderWater(ID3D11Device* device, ID3D11DeviceContext* deviceC
 	waterShader->SetResource("refractionTexture", refractionTexture);
 	waterShader->SetResource("reflectionTexture", reflectionTexture);
 	waterShader->SetMatrix("worldMatrix", world);
-	waterShader->SetMatrix("reflectionViewMatrix", reflectionMatrix);
+	waterShader->SetMatrix("reflectionMatrix", reflectionMatrix);
 	waterShader->SetMatrix("projectionMatrix", proj);
 	waterShader->SetMatrix("viewMatrix", view);
-	waterShader->SetFloat4("ambientColor", ambient);
-	waterShader->SetFloat4("diffuseColor", diffuse);
-	waterShader->SetFloat4("lightPos", lightPos4);
+	waterShader->SetFloat("waterTranslation", waterTranslation);
+	waterShader->SetFloat("reflectRefractScale", reflectRefractScale);
 
 	
 	water->Apply(0);

@@ -212,34 +212,5 @@ D3DXMATRIX Camera::RenderReflection(float height)
 
 	D3DXMatrixLookAtLH(&m_reflectionViewMatrix, &position, &lookAt, &up);
 
-	/*D3DXVec3Normalize(&lookAt, &lookAt);
-	D3DXVec3Cross(&up, &lookAt, &this->mRight);
-	D3DXVec3Normalize(&up, &up);
-	D3DXVec3Cross(&this->mRight, &up, &lookAt);
-
-	float x = -D3DXVec3Dot(&position, &this->mRight);
-	float y = -D3DXVec3Dot(&position, &up);
-	float z = -D3DXVec3Dot(&position, &lookAt);
-
-	this->m_reflectionViewMatrix(0, 0) = this->mRight.x;
-	this->m_reflectionViewMatrix(1, 0) = this->mRight.y;
-	this->m_reflectionViewMatrix(2, 0) = this->mRight.z;
-	this->m_reflectionViewMatrix(3, 0) = x;
-
-	this->m_reflectionViewMatrix(0, 1) = up.x;
-	this->m_reflectionViewMatrix(1, 1) = up.y;
-	this->m_reflectionViewMatrix(2, 1) = up.z;
-	this->m_reflectionViewMatrix(3, 1) = y;
-
-	this->m_reflectionViewMatrix(0, 2) = lookAt.x;
-	this->m_reflectionViewMatrix(1, 2) = lookAt.y;
-	this->m_reflectionViewMatrix(2, 2) = lookAt.z;
-	this->m_reflectionViewMatrix(3, 2) = z;
-
-	this->m_reflectionViewMatrix(0, 3) = 0.0f;
-	this->m_reflectionViewMatrix(1, 3) = 0.0f;
-	this->m_reflectionViewMatrix(2, 3) = 0.0f;
-	this->m_reflectionViewMatrix(3, 3) = 1.0f;*/
-
 	return this->m_reflectionViewMatrix;
 }
