@@ -2,17 +2,13 @@
 
 GaussianBlur::GaussianBlur()
 {
-	blurTexture = NULL;
-	blurSRV = NULL;
-	blurUAV = NULL;
+	texture = NULL;
 }
 
 GaussianBlur::~GaussianBlur()
 {
-	SAFE_RELEASE(blurSRV);
-	SAFE_RELEASE(blurUAV);
+	SAFE_DELETE(texture);
 
-	bruteForceGaussian->Release();
 	verticalGaussian->Release();
 	horizontalGaussian->Release();
 }
@@ -23,17 +19,7 @@ bool GaussianBlur::init(ID3D11Device* device, ID3D11DeviceContext* deviceContext
 	this->device = device;
 	this->deviceContext = deviceContext;
 
-	//Bruteforce
 	ID3DBlob* pBlob = NULL;
-	hr = CompileShaderFromFile("..\\Shaders\\GaussianFilter.fx", "CSMain", "cs_5_0", &pBlob);
-	if(FAILED(hr))
-		return false;
-
-	hr = device->CreateComputeShader(pBlob->GetBufferPointer(), pBlob->GetBufferSize(), NULL, &bruteForceGaussian);
-	SAFE_RELEASE(pBlob);
-	if(FAILED(hr))
-		return false;
-
 	//Vertical
 	hr = CompileShaderFromFile("..\\Shaders\\GaussianFilter.fx", "CSMainY", "cs_5_0", &pBlob);
 	if(FAILED(hr))
@@ -54,7 +40,10 @@ bool GaussianBlur::init(ID3D11Device* device, ID3D11DeviceContext* deviceContext
 	if(FAILED(hr))
 		return false;
 
-	D3D11_TEXTURE2D_DESC texDesc;	
+	texture = new Texture();
+	texture->init(device, SCREEN_WIDTH, SCREEN_HEIGHT, SHADER_RESOURCE | UNORDERED_RESOURCE);
+
+	/*D3D11_TEXTURE2D_DESC texDesc;	
 	texDesc.Width				= SCREEN_WIDTH;
 	texDesc.Height				= SCREEN_HEIGHT;
 	texDesc.MipLevels			= 1;
@@ -77,7 +66,7 @@ bool GaussianBlur::init(ID3D11Device* device, ID3D11DeviceContext* deviceContext
 		return false;
 
 	SAFE_RELEASE(blurTexture);
-
+	*/
 	return true;
 }
 
@@ -89,7 +78,7 @@ void GaussianBlur::blur(ID3D11DeviceContext* deviceContext, int blurPasses, ID3D
 	{
 		//Horizontal pass
 		deviceContext->CSSetShaderResources(0, 1, &mainSRV);
-		deviceContext->CSSetUnorderedAccessViews(0, 1, &blurUAV, 0);
+		deviceContext->CSSetUnorderedAccessViews(0, 1, texture->getUAV(), 0);
 		deviceContext->CSSetShader(horizontalGaussian, NULL, 0);
 		deviceContext->Dispatch((UINT)ceil(SCREEN_WIDTH/1024.0f), SCREEN_HEIGHT, 1);
 
@@ -97,7 +86,7 @@ void GaussianBlur::blur(ID3D11DeviceContext* deviceContext, int blurPasses, ID3D
 		deviceContext->CSSetUnorderedAccessViews( 0, 1, nullUAV, 0);
 
 		//Vertical pass
-		deviceContext->CSSetShaderResources(0, 1, &blurSRV);
+		deviceContext->CSSetShaderResources(0, 1, texture->getSRV());
 		deviceContext->CSSetUnorderedAccessViews(0, 1, &mainUAV, 0);
 		deviceContext->CSSetShader(verticalGaussian, NULL, 0);
 		deviceContext->Dispatch(SCREEN_WIDTH, (UINT)ceil(SCREEN_HEIGHT/768.0f), 1);
