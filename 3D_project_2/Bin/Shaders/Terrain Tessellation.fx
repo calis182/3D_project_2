@@ -28,6 +28,8 @@ cbuffer EveryFrame
 	float4 eyePos;
 
 	float4 frustrumPlaneEquation[4];
+
+	bool normals;
 };
 
 struct VSIn
@@ -228,11 +230,11 @@ PSSceneIn DS(HSDataOutput input, float3 UVW : SV_DomainLocation, const OutputPat
 float3 filterNormal(float2 uv, float texelSize, float texelAspect)
 {
 	float4 h;
-	
-	h[0] = gHeightMap.Sample(ss, uv + texelSize*float2( 0,-1)).r * texelAspect;
-	h[1] = gHeightMap.Sample(ss, uv + texelSize*float2(-1, 0)).r * texelAspect;
-	h[2] = gHeightMap.Sample(ss, uv + texelSize*float2( 1, 0)).r * texelAspect;
-	h[3] = gHeightMap.Sample(ss, uv + texelSize*float2( 0, 1)).r * texelAspect;
+
+	h[0] = gHeightMap.Sample(ss, uv + texelSize * float2( 0,-1)).r * texelAspect;
+	h[1] = gHeightMap.Sample(ss, uv + texelSize * float2(-1, 0)).r * texelAspect;
+	h[2] = gHeightMap.Sample(ss, uv + texelSize * float2( 1, 0)).r * texelAspect;
+	h[3] = gHeightMap.Sample(ss, uv + texelSize * float2( 0, 1)).r * texelAspect;
 	
 	float3 n;
 	n.z = h[0] - h[3];
@@ -247,7 +249,7 @@ float3 filterNormal(float2 uv, float texelSize, float texelAspect)
 //-----------------------------------------------------------------------------------------
 float4 PSScene(PSSceneIn input) : SV_Target
 {
-	input.normal = filterNormal(input.uv, 0.1, 0.1f);
+	input.normal = filterNormal(input.uv, 1.0f/256.0f, 100);
 
 	//Blendmap
 	int repeat = 20;
@@ -287,12 +289,14 @@ float4 PSScene(PSSceneIn input) : SV_Target
 		float specFactor = (max(dot(v, toEye), 0.0f));
 
 		diffuse = diffuseFactor * light.diffuse;
-		spec = specFactor * light.specular;
+		spec = 0.5 * specFactor * light.specular;
 	}
 
 	texColor += diffuse + light.ambient + spec;
-
-	//return float4(input.normal, 1);;
+	
+	if(normals)
+		return float4(input.normal, 1);
+	
 	return texColor;
 }
 

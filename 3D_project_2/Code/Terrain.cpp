@@ -292,6 +292,15 @@ void Terrain::render(ID3D11DeviceContext* deviceContext, D3DXMATRIX world, D3DXM
 	g_Shader->SetFloat("tessFactor", tessFactor);
 	g_Shader->SetRawData("frustrumPlaneEquation", frustrumPlaneEquation, sizeof(D3DXVECTOR4) * 4);
 
+	/*if(GetAsyncKeyState('N'))
+	{
+		g_Shader->SetBool("normals", true);
+	}
+	else
+	{*/
+		g_Shader->SetBool("normals", false);
+	//}
+
 	deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_3_CONTROL_POINT_PATCHLIST);
 
 	mesh->Apply(0);
