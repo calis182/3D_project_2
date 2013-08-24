@@ -88,7 +88,7 @@ float4 ReflectionPixelShader(PixelInputType input) : SV_TARGET
 
 	lightVec = lightPos - input.position.w;
 	float d = length(lightVec);
-	lightVec /= -d;
+	lightVec /= d;
 
 	//Caluculate the amount of light on this pixel.
 	lightIntensity = saturate(dot(input.normal, lightVec));
