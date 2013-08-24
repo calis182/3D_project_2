@@ -187,41 +187,59 @@ void Camera::UpdateViewMatrix()
 D3DXMATRIX Camera::RenderReflection(float height)
 {
 	D3DXVECTOR3 position;
+	D3DXVECTOR3 up;
+	D3DXVECTOR3 lookAt;
+	float radians;
 
 	// Setup the position of the camera in the world.
 	// For planar reflection invert the Y position of the camera.
-	position.x = position.x;
-	position.y = -position.y + (height * 2.0f);
-	position.z = position.z;
+	position.x = this->m_position.x;
+	position.y = -this->m_position.y + (height * 2.0f);
+	position.z = this->m_position.z;
 
-	D3DXVec3Normalize(&this->mLook, &this->mLook);
-	D3DXVec3Cross(&this->mUp, &this->mLook, &this->mRight);
-	D3DXVec3Normalize(&this->mUp, &this->mUp);
-	D3DXVec3Cross(&this->mRight, &this->mUp, &this->mLook);
+	// Setup the vector that points upwards.
+	up.x = 0.0f;
+	up.y = 1.0f;
+	up.z = 0.0f;
+
+	// Calculate the rotation in radians.
+	radians = 45 * 0.0174532925f;
+
+	// Setup where the camera is looking.
+	lookAt.x = sinf(radians) + this->m_position.x;
+	lookAt.y = position.y;
+	lookAt.z = cosf(radians) + this->m_position.z;
+
+	D3DXMatrixLookAtLH(&m_reflectionViewMatrix, &position, &lookAt, &up);
+
+	/*D3DXVec3Normalize(&lookAt, &lookAt);
+	D3DXVec3Cross(&up, &lookAt, &this->mRight);
+	D3DXVec3Normalize(&up, &up);
+	D3DXVec3Cross(&this->mRight, &up, &lookAt);
 
 	float x = -D3DXVec3Dot(&position, &this->mRight);
-	float y = -D3DXVec3Dot(&position, &this->mUp);
-	float z = -D3DXVec3Dot(&position, &this->mLook);
+	float y = -D3DXVec3Dot(&position, &up);
+	float z = -D3DXVec3Dot(&position, &lookAt);
 
 	this->m_reflectionViewMatrix(0, 0) = this->mRight.x;
 	this->m_reflectionViewMatrix(1, 0) = this->mRight.y;
 	this->m_reflectionViewMatrix(2, 0) = this->mRight.z;
 	this->m_reflectionViewMatrix(3, 0) = x;
 
-	this->m_reflectionViewMatrix(0, 1) = this->mUp.x;
-	this->m_reflectionViewMatrix(1, 1) = this->mUp.y;
-	this->m_reflectionViewMatrix(2, 1) = this->mUp.z;
+	this->m_reflectionViewMatrix(0, 1) = up.x;
+	this->m_reflectionViewMatrix(1, 1) = up.y;
+	this->m_reflectionViewMatrix(2, 1) = up.z;
 	this->m_reflectionViewMatrix(3, 1) = y;
 
-	this->m_reflectionViewMatrix(0, 2) = this->mLook.x;
-	this->m_reflectionViewMatrix(1, 2) = this->mLook.y;
-	this->m_reflectionViewMatrix(2, 2) = this->mLook.z;
+	this->m_reflectionViewMatrix(0, 2) = lookAt.x;
+	this->m_reflectionViewMatrix(1, 2) = lookAt.y;
+	this->m_reflectionViewMatrix(2, 2) = lookAt.z;
 	this->m_reflectionViewMatrix(3, 2) = z;
 
 	this->m_reflectionViewMatrix(0, 3) = 0.0f;
 	this->m_reflectionViewMatrix(1, 3) = 0.0f;
 	this->m_reflectionViewMatrix(2, 3) = 0.0f;
-	this->m_reflectionViewMatrix(3, 3) = 1.0f;
+	this->m_reflectionViewMatrix(3, 3) = 1.0f;*/
 
 	return this->m_reflectionViewMatrix;
 }
