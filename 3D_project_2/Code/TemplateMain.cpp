@@ -27,6 +27,7 @@
 #include "BlendState.h"
 #include "GaussianBlur.h"
 #include "WaterShader.h"
+#include "Texture.h"
 
 void renderCubeMap(void* param);
 void extractPlanesFromFrustrum(D3DXVECTOR4* planeEquation, const D3DXMATRIX* viewProj, bool normalize = true);
@@ -47,10 +48,8 @@ ID3D11DepthStencilView* g_DepthStencilView		= NULL;
 ID3D11Device*			g_Device				= NULL;
 ID3D11DeviceContext*	g_DeviceContext			= NULL;
 
-ID3D11Texture2D*		mainTexture2D = NULL; 
-ID3D11RenderTargetView* mainRTV		= NULL;
-ID3D11ShaderResourceView* mainSRV = NULL;
-ID3D11UnorderedAccessView* mainUAV = NULL;
+Texture* mainTexture = NULL;
+
 Buffer* fullscreenQuad;
 
 D3DXVECTOR4 frustrumPlaneEquation[6];
@@ -205,6 +204,8 @@ int WINAPI wWinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdL
 	SAFE_DELETE(fullscreenQuad);
 
 	delete debugTextureShader;
+
+	SAFE_DELETE(mainTexture);
 
 	g_Device->Release();
 	g_DeviceContext->Release();
@@ -426,7 +427,6 @@ HRESULT InitDirect3D()
 	vp.TopLeftY = 0;
 	g_DeviceContext->RSSetViewports( 1, &vp );
 
-	//Create renderTarget, needed for the blur.
 	D3D11_TEXTURE2D_DESC texDesc;	
 	texDesc.Width				= SCREEN_WIDTH;
 	texDesc.Height				= SCREEN_HEIGHT;
@@ -436,14 +436,14 @@ HRESULT InitDirect3D()
 	texDesc.SampleDesc.Count	= 1;
 	texDesc.SampleDesc.Quality	= 0;
 	texDesc.Usage				= D3D11_USAGE_DEFAULT;
-	texDesc.BindFlags			= D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_UNORDERED_ACCESS;
+	texDesc.BindFlags			= D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
 	texDesc.CPUAccessFlags		= 0;
 	texDesc.MiscFlags			= 0;
 
-	hr = g_Device->CreateTexture2D(&texDesc, NULL, &mainTexture2D);
-	hr = g_Device->CreateRenderTargetView(mainTexture2D, NULL, &mainRTV);
-	hr = g_Device->CreateShaderResourceView(mainTexture2D, NULL, &mainSRV);
-	hr = g_Device->CreateUnorderedAccessView(mainTexture2D, NULL, &mainUAV);
+	//Create RTV, SRV, UAV needed for blur
+	mainTexture = new Texture();
+	if(!mainTexture->init(g_Device, SCREEN_WIDTH, SCREEN_HEIGHT, RENDER_TARGET | SHADER_RESOURCE | UNORDERED_RESOURCE))
+		return E_FAIL;
 
 	hr = g_Device->CreateTexture2D(&texDesc, NULL, &refractionTexture2D);
 	hr = g_Device->CreateShaderResourceView(refractionTexture2D, NULL, &refractionTexture);
@@ -718,7 +718,7 @@ HRESULT Render(float deltaTime)
 
 	extractPlanesFromFrustrum(frustrumPlaneEquation, &viewProj);
 
-	renderTargets[0] = mainRTV;
+	renderTargets[0] = *mainTexture->getRTV();
 	
 	//clear render target
 	//clear depth info
@@ -740,7 +740,7 @@ HRESULT Render(float deltaTime)
 
 	g_DeviceContext->Begin(query);
 	
-	g_Terrain->render(g_DeviceContext, world, view, proj, camera->GetPosition(), *light, mainSRV, tessFactor, frustrumPlaneEquation);
+	g_Terrain->render(g_DeviceContext, world, view, proj, camera->GetPosition(), *light, *mainTexture->getSRV(), tessFactor, frustrumPlaneEquation);
 
 	g_DeviceContext->End(query);
 
@@ -763,12 +763,12 @@ HRESULT Render(float deltaTime)
 	//Gaussian blur
 	renderTargets[0] = g_RenderTargetView;
 	g_DeviceContext->OMSetRenderTargets(1, renderTargets, g_DepthStencilView);
-	gaussianBlur->blur(g_DeviceContext, blurPasses, mainSRV, mainUAV);
+	gaussianBlur->blur(g_DeviceContext, blurPasses, *mainTexture->getSRV(), *mainTexture->getUAV());
 
 	//Fullscreen pass
 	g_DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
 	fullscreenQuad->Apply(0);
-	debugTextureShader->SetResource("texture1", mainSRV);
+	debugTextureShader->SetResource("texture1", *mainTexture->getSRV());
 	debugTextureShader->Apply(0);
 	g_DeviceContext->Draw(4, 0);
 
@@ -808,7 +808,7 @@ bool RenderRefractionToTexture()
 	proj = camera->Proj();
 
 	
-	g_Terrain->render(g_DeviceContext, world, view, proj, camera->GetPosition(), *light, mainSRV, 16, frustrumPlaneEquation);
+	g_Terrain->render(g_DeviceContext, world, view, proj, camera->GetPosition(), *light, *mainTexture->getSRV(), 16, frustrumPlaneEquation);
 	skyBox->render(view * proj, skyBox->getCubeMap());
 	particleSystem->Draw(g_DeviceContext, world, view, proj);
 
@@ -845,8 +845,7 @@ bool RenderReflectonToTexture()
 	view = camera->View();
 	proj = camera->Proj();
 
-	
-	g_Terrain->render(g_DeviceContext, world, view, proj, camera->GetPosition(), *light, mainSRV, 16, frustrumPlaneEquation);
+	g_Terrain->render(g_DeviceContext, world, view, proj, camera->GetPosition(), *light, *mainTexture->getSRV(), 16, frustrumPlaneEquation);
 	skyBox->render(view * proj, skyBox->getCubeMap());
 	particleSystem->Draw(g_DeviceContext, world, view, proj);
 
@@ -873,7 +872,7 @@ bool RenderScene()
 
 
 	//Set the render target to be the reflection render to texture.
-	g_DeviceContext->OMSetRenderTargets( 1, &mainRTV, g_DepthStencilView );
+	g_DeviceContext->OMSetRenderTargets( 1, mainTexture->getRTV(), g_DepthStencilView );
     
 	D3DXMatrixIdentity(&world);
 	view = camera->View();
