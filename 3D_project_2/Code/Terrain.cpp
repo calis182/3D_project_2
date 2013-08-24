@@ -47,7 +47,7 @@ HRESULT Terrain::initShader(ID3D11Device* device, ID3D11DeviceContext* deviceCon
 
 	texture1.init(device, "..\\Shaders\\stone.jpg");
 	texture2.init(device, "..\\Shaders\\grassafterrain.jpg");
-	texture3.init(device, "..\\Shaders\\water.jpg");
+	texture3.init(device, "..\\Shaders\\brickwork-texture.jpg");
 	blendMap.init(device, "..\\Shaders\\blendmap.jpg");
 	texture4.init(device, "..\\Shaders\\wire.png");
 	hm.init(device, "..\\Shaders\\hm.png");

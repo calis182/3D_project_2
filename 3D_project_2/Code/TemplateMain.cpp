@@ -526,7 +526,7 @@ HRESULT InitDirect3D()
 		MessageBox(NULL, "Could not init input", NULL, MB_OK);
 	}
 
-	float colorCorr = 1000;
+	float colorCorr = 2000;
 	light = new PointLight(D3DXVECTOR4(252/colorCorr, 214/colorCorr, 103/colorCorr, 1), D3DXVECTOR4(252/colorCorr, 214/colorCorr, 103/colorCorr, 1), D3DXVECTOR4(252/colorCorr, 214/colorCorr, 103/colorCorr, 1), D3DXVECTOR3(-128, 128, 128), 500);
 	
 	camera = new Camera();
