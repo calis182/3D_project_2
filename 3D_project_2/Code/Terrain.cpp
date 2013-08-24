@@ -87,7 +87,7 @@ bool Terrain::init(ID3D11Device* device, ID3D11DeviceContext* deviceContext)
 
 	float x = 0, y = 0, z = 0;
 	float halfWidth = -(width*0.5f), halfHeight = (height*0.5f);
-	float triangleSize = width / (numOfStartingVertex-1);
+	float triangleSize = (float)width / (numOfStartingVertex-1);
 	float uvSize = 1.0f / (numOfStartingVertex-1);
 	for(int i = 0; i < numOfStartingVertex; i++)
 	{
