@@ -50,7 +50,7 @@ bool WaterShader::Initialize(ID3D11Device* device, ID3D11DeviceContext* deviceCo
 	}
 
 	water = new Buffer();
-	if(FAILED(refraction->Init(device, deviceContext, waterDesc)))
+	if(FAILED(water->Init(device, deviceContext, waterDesc)))
 	{
 		return false;
 	}
