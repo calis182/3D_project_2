@@ -43,6 +43,7 @@ RasterizerState NoCulling
 struct VertexInputType
 {
 	float4 position : POSITION;
+	float3 normal : NORMAL;
 	float2 tex : TEXCOORD;
 };
 
@@ -76,7 +77,7 @@ PixelInputType WaterVertexShader(VertexInputType input)
 
 	//Create the reflection projection world matrix.
 	reflectProjectWorld = mul(reflectionMatrix, projectionMatrix);
-	reflectProjectWorld = mul(worldMatrix, reflectionMatrix);
+	reflectProjectWorld = mul(worldMatrix, reflectProjectWorld);
 
 	//Calculate the input position against the reflectProjectWorld matrix. 
 	output.reflectionPosition = mul(input.position, reflectProjectWorld);
@@ -110,13 +111,13 @@ float4 WaterPixelShader(PixelInputType input) : SV_TARGET
 
 	//Calculate the projected reflection texture coordinates.
 	reflectTexCoord.x = input.reflectionPosition.x / input.reflectionPosition.w / 2.0f + 0.5f;
-	reflectTexCoord.y = input.reflectionPosition.y / input.reflectionPosition.w / 2.0f + 0.5f;
+	reflectTexCoord.y = -input.reflectionPosition.y / input.reflectionPosition.w / 2.0f + 0.5f;
 
 	// Calculate the projected refraction texture coordinates.
     refractTexCoord.x = input.refractionPosition.x / input.refractionPosition.w / 2.0f + 0.5f;
-    refractTexCoord.y = input.refractionPosition.y / input.refractionPosition.w / 2.0f + 0.5f;
+    refractTexCoord.y = -input.refractionPosition.y / input.refractionPosition.w / 2.0f + 0.5f;
 
-	//Sample the normal from thr normal mao texture.
+	//Sample the normal from the normal map texture.
 	normalMap = normalTexture.Sample(SampleType, input.tex);
 
 	//Expand the range of the normal from (0,1) to (-1,+1).
@@ -126,7 +127,8 @@ float4 WaterPixelShader(PixelInputType input) : SV_TARGET
 	reflectTexCoord = reflectTexCoord + (normal.xy * reflectRefractScale);
 	refractTexCoord = refractTexCoord + (normal.xy * reflectRefractScale);
 
-	reflectionColor = reflectionTexture.Sample(SampleType, reflectTexCoord);
+	// Sample the texture pixels from the textures using the updated texture coordinates.
+   	reflectionColor = reflectionTexture.Sample(SampleType, reflectTexCoord);
 	refractionColor = refractionTexture.Sample(SampleType, refractTexCoord);
 
 

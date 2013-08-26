@@ -21,13 +21,13 @@ bool WaterShader::Initialize(ID3D11Device* device, ID3D11DeviceContext* deviceCo
 {
 
 	Vertex waterModel[] = {
-	{D3DXVECTOR3(-128, 5, 128), D3DXVECTOR3(0, 1, 0), D3DXVECTOR2(0, 0)},
-	{D3DXVECTOR3(128, 5, -128), D3DXVECTOR3(0, 1, 0), D3DXVECTOR2(1, 1)},
-	{D3DXVECTOR3(-128, 5, -128), D3DXVECTOR3(0, 1, 0), D3DXVECTOR2(0,1)},
+	{D3DXVECTOR4(-128, 5, 128, 1), D3DXVECTOR3(0, 1, 0), D3DXVECTOR2(0, 0)},
+	{D3DXVECTOR4(128, 5, -128, 1), D3DXVECTOR3(0, 1, 0), D3DXVECTOR2(1, 1)},
+	{D3DXVECTOR4(-128, 5, -128, 1), D3DXVECTOR3(0, 1, 0), D3DXVECTOR2(0,1)},
 		
-	{D3DXVECTOR3(128, 5, 128), D3DXVECTOR3(0, 1, 0), D3DXVECTOR2(1, 0)},
-	{D3DXVECTOR3(128, 5, -128), D3DXVECTOR3(0, 1, 0), D3DXVECTOR2(1,1)},
-	{D3DXVECTOR3(-128, 5, 128), D3DXVECTOR3(0, 1, 0), D3DXVECTOR2(0,0)}
+	{D3DXVECTOR4(128, 5, 128, 1), D3DXVECTOR3(0, 1, 0), D3DXVECTOR2(1, 0)},
+	{D3DXVECTOR4(128, 5, -128, 1), D3DXVECTOR3(0, 1, 0), D3DXVECTOR2(1,1)},
+	{D3DXVECTOR4(-128, 5, 128, 1), D3DXVECTOR3(0, 1, 0), D3DXVECTOR2(0,0)}
 	};
 	
 	BUFFER_INIT_DESC waterDesc;
@@ -82,13 +82,9 @@ bool WaterShader::InitializeShader(ID3D11Device* device, ID3D11DeviceContext* de
 		return false;
 	}
 
-	D3D11_INPUT_ELEMENT_DESC waterInputDesc[] = {
-	{ "POSITION", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-	{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 16, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-	};
 
 	waterShader = new Shader();
-	if(FAILED(waterShader->Init(device, deviceContext, "../Shaders/Water.fx", waterInputDesc, 2)))
+	if(FAILED(waterShader->Init(device, deviceContext, "../Shaders/Water.fx", inputDesc, 3)))
 	{
 		return false;
 	}
@@ -281,7 +277,6 @@ void WaterShader::RenderReflection(ID3D11Device* device, ID3D11DeviceContext* de
 void WaterShader::RenderWater(ID3D11Device* device, ID3D11DeviceContext* deviceContext, ID3D11ShaderResourceView* refractionTexture, ID3D11ShaderResourceView* reflectionTexture)
 {
 
-	D3DXVECTOR4 lightPos4 = D3DXVECTOR4(lightPos,0);
 	waterShader->SetResource("normalTexture", normalMap->getTexture());
 	waterShader->SetResource("refractionTexture", refractionTexture);
 	waterShader->SetResource("reflectionTexture", reflectionTexture);
