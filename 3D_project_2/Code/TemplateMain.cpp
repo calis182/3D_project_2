@@ -571,7 +571,7 @@ HRESULT InitDirect3D()
 	m_waterTranslation = 0.0f;
 
 	waterSimulation = new WaterSimulation();
-	if(!waterSimulation->init(g_Device, g_DeviceContext, D3DXVECTOR3(-128, -128, 15), 256, 256, 16, 16, 2))
+	if(!waterSimulation->init(g_Device, g_DeviceContext, D3DXVECTOR3(-128, -128, 15), 256, 256, 16, 16, 5))
 		return E_FAIL;
 
 	return S_OK;
@@ -717,7 +717,7 @@ HRESULT Render(float deltaTime)
 		extractPlanesFromFrustrum(frustrumPlaneEquation, &viewProj);
 
 		skyBox->render(view * proj, skyBox->getCubeMap());
-		waterSimulation->render(g_DeviceContext, view*proj, tessFactor, frustrumPlaneEquation);
+		waterSimulation->render(g_DeviceContext, view*proj, tessFactor, frustrumPlaneEquation, cubeMap->getPosition());
 		g_Terrain->render(g_DeviceContext, world, view, proj, cubeMap->getPosition(), *light, skyBox->getCubeMap(), tessFactor, frustrumPlaneEquation);
 
 		particleSystem->Draw(g_DeviceContext, world, view, proj);
@@ -744,7 +744,7 @@ HRESULT Render(float deltaTime)
 	skyBox->update(camera->GetPosition());
 	skyBox->render(view * proj, skyBox->getCubeMap());
 	
-	//waterSimulation->render(g_DeviceContext, view*proj, tessFactor, frustrumPlaneEquation);
+	waterSimulation->render(g_DeviceContext, view*proj, tessFactor, frustrumPlaneEquation, camera->GetPosition());
 
 	ID3D11Query* query = NULL;
 	D3D11_QUERY_DESC qd;

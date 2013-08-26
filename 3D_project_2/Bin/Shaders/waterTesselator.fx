@@ -10,6 +10,8 @@ cbuffer EveryFrame
 
 	float tessFactor;
 	
+	float4 eyePos;
+
 	float4 frustrumPlaneEquation[4];
 	float dispatchSize;
 };
@@ -58,7 +60,7 @@ SamplerState ss
 RasterizerState NoCulling
 {
 	CullMode = NONE;
-	FillMode = solid;
+	//FillMode = wireframe;
 };
 
 VSOut VSScene(VSIn input)
@@ -78,14 +80,23 @@ float distanceFromPlane(float3 f3Position, float4 f4PlaneEquation)
 	return distance;
 }
 
+const float minDist = 200;
+const float maxDist = 400;
+
+const float minTess = 2.0f;
+const float maxTess = 4.0f;
+
+float calculateTessFactor(float3 p)
+{
+	float d = distance(p, eyePos);
+	float s = saturate((d - minDist) / (maxDist - minDist));
+	return pow(2, (lerp(maxTess, minTess, s)));
+}
+
 HSDataOutput ConstantHS(InputPatch<VSOut, 3> ip, uint PatchID : SV_PrimitiveID)
 {
 	HSDataOutput output = (HSDataOutput)0;
 
-	output.edges[0] = tessFactor;
-	output.edges[1] = tessFactor;
-	output.edges[2] = tessFactor;
-	output.inside = tessFactor;
 
 	bool viewFrustrumCull = true;
 
@@ -110,6 +121,13 @@ HSDataOutput ConstantHS(InputPatch<VSOut, 3> ip, uint PatchID : SV_PrimitiveID)
 		output.edges[1] = 0.0f;
 		output.edges[2] = 0.0f;
 		output.inside = 0.0f;
+	}
+	else
+	{
+		output.edges[0] = calculateTessFactor(ip[0].pos);
+		output.edges[1] = calculateTessFactor(ip[1].pos);
+		output.edges[2] = calculateTessFactor(ip[2].pos);
+		output.inside = calculateTessFactor(ip[0].pos);
 	}
 
 	return output;

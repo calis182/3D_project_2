@@ -15,7 +15,7 @@ public:
 	bool initResources(ID3D11Device* device, ID3D11DeviceContext* deviceContext, D3DXVECTOR3 pos, int sizeX, int sizeY, int calcX, int calcY, int detailed);
 
 	void update(ID3D11DeviceContext* deviceContext, float dt);
-	void render(ID3D11DeviceContext* deviceContext, D3DXMATRIX wvp, float tessFactor, D3DXVECTOR4* frustrumPlaneEquation);
+	void render(ID3D11DeviceContext* deviceContext, D3DXMATRIX wvp, float tessFactor, D3DXVECTOR4* frustrumPlaneEquation, D3DXVECTOR3 cameraPos);
 
 	void setPosition(D3DXVECTOR3 pos);
 

@@ -283,7 +283,7 @@ void WaterSimulation::update(ID3D11DeviceContext* deviceContext, float dt)
 	UAV[1] = tempUAV;
 }
 
-void WaterSimulation::render(ID3D11DeviceContext* deviceContext, D3DXMATRIX wvp, float tessFactor, D3DXVECTOR4* frustrumPlaneEquation)
+void WaterSimulation::render(ID3D11DeviceContext* deviceContext, D3DXMATRIX wvp, float tessFactor, D3DXVECTOR4* frustrumPlaneEquation, D3DXVECTOR3 cameraPos)
 {
 	deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_3_CONTROL_POINT_PATCHLIST);
 
@@ -297,6 +297,7 @@ void WaterSimulation::render(ID3D11DeviceContext* deviceContext, D3DXMATRIX wvp,
 
 	renderShader->SetMatrix("gW", world);
 	renderShader->SetMatrix("gVP", wvp);
+	renderShader->SetFloat4("eyePos", D3DXVECTOR4(cameraPos, 0));
 	renderShader->SetFloat("dispatchSize", calcY);
 	renderShader->SetFloat("tessFactor", tessFactor);
 	renderShader->SetResource("currentState", SRV[0]);
