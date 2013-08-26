@@ -526,8 +526,8 @@ HRESULT InitDirect3D()
 		MessageBox(NULL, "Could not init input", NULL, MB_OK);
 	}
 
-	float colorCorr = 2000;
-	light = new PointLight(D3DXVECTOR4(252/colorCorr, 214/colorCorr, 103/colorCorr, 1), D3DXVECTOR4(252/colorCorr, 214/colorCorr, 103/colorCorr, 1), D3DXVECTOR4(252/colorCorr, 214/colorCorr, 103/colorCorr, 1), D3DXVECTOR3(-128, 128, 128), 500);
+	float colorCorr = 256;
+	light = new PointLight(D3DXVECTOR4(252/colorCorr, 214/colorCorr, 103/colorCorr, 1), D3DXVECTOR4(252/colorCorr, 214/colorCorr, 103/colorCorr, 1), D3DXVECTOR4(252/colorCorr, 214/colorCorr, 103/colorCorr, 1), D3DXVECTOR3(-1280, 1280, -1280), 20000);
 	
 	camera = new Camera();
 	camera->SetLens((float)D3DX_PI * 0.45f, (float)SCREEN_WIDTH/(float)SCREEN_HEIGHT, 0.1f, 1000.0f);
@@ -664,7 +664,7 @@ HRESULT Render(float deltaTime)
 	g_DeviceContext->RSSetViewports(1, &cubeMap->getViewPort(length));
 	
 	static int blurPasses = 0;
-	float tessFactor = 3.0f;
+	float tessFactor = 9.0f;
 	for(int i = 0; i <= 9; i++)
 	{
 		if(GetAsyncKeyState(char(i) + '0'))

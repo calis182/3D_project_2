@@ -37,6 +37,12 @@ private:
 		D3DXVECTOR2 uv;
 	};
 
+	struct Vertex2
+	{
+		D3DXVECTOR3 pos;
+		D3DXVECTOR2 uv;
+	};
+
 	Buffer *mesh, *index, *fence;
 	TextureClass texture1, texture2, texture3, blendMap, texture4, hm;
 	Shader*	g_Shader, *g_Fence;

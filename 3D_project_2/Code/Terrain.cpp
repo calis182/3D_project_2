@@ -29,18 +29,24 @@ HRESULT Terrain::initShader(ID3D11Device* device, ID3D11DeviceContext* deviceCon
 {
 	D3D11_INPUT_ELEMENT_DESC inputDesc[] = {
 	{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-	{ "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-	{ "UV", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 24, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+	//{ "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+	{ "UV", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0 },
 	};
 
 	g_Shader = new Shader();
-	if(FAILED(g_Shader->Init(device, deviceContext, "../Shaders/Terrain Tessellation.fx", inputDesc, 3)))
+	if(FAILED(g_Shader->Init(device, deviceContext, "../Shaders/Terrain Tessellation.fx", inputDesc, 2)))
 	{
 		return E_FAIL;
 	}
 
+	D3D11_INPUT_ELEMENT_DESC inputDesc2[] = {
+	{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+	{ "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+	{ "UV", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 24, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+	};
+
 	g_Fence = new Shader();
-	if(FAILED(g_Fence->Init(device, deviceContext, "../Shaders/SingleTexture.fx", inputDesc, 3)))
+	if(FAILED(g_Fence->Init(device, deviceContext, "../Shaders/SingleTexture.fx", inputDesc2, 3)))
 	{
 		return E_FAIL;
 	}
@@ -58,19 +64,19 @@ HRESULT Terrain::initShader(ID3D11Device* device, ID3D11DeviceContext* deviceCon
 bool Terrain::init(ID3D11Device* device, ID3D11DeviceContext* deviceContext)
 {
 	BUFFER_INIT_DESC vertexBufferDesc, indexBufferDesc;
-	Vertex* vertices = NULL;
+	Vertex2* vertices = NULL;
 	unsigned long* indices = NULL;
 
 	width = 256;
 	height = 256;
-	numOfStartingVertex = 10;
+	numOfStartingVertex = 8;
 
 	initShader(device, deviceContext);
 
 	vertexCount = numOfStartingVertex*numOfStartingVertex;
 	indexCount = (numOfStartingVertex-1) * (numOfStartingVertex-1) * 6;
 
-	vertices = new Vertex[vertexCount];
+	vertices = new Vertex2[vertexCount];
 	if(!vertices)
 		return false;
 
@@ -98,7 +104,7 @@ bool Terrain::init(ID3D11Device* device, ID3D11DeviceContext* deviceContext)
 			z = halfHeight-j*triangleSize;
 			//y = heightMap->getData(x + 128, z + 128);
 			vertices[in].pos = D3DXVECTOR3(x, y, z);
-			vertices[in].normal = D3DXVECTOR3(0,1,0);
+			//vertices[in].normal = D3DXVECTOR3(0,1,0);
 			//i/(width/repeat),j/(height/repeat));
 			vertices[in].uv = D3DXVECTOR2(i * uvSize, j * uvSize);
 		}
@@ -168,7 +174,7 @@ bool Terrain::init(ID3D11Device* device, ID3D11DeviceContext* deviceContext)
 		}
 	}
 
-	vertexBufferDesc.ElementSize = sizeof(Vertex);
+	vertexBufferDesc.ElementSize = sizeof(Vertex2);
 	vertexBufferDesc.InitData = vertices;
 	vertexBufferDesc.NumElements = vertexCount;
 	vertexBufferDesc.Type = VERTEX_BUFFER;
@@ -292,14 +298,14 @@ void Terrain::render(ID3D11DeviceContext* deviceContext, D3DXMATRIX world, D3DXM
 	g_Shader->SetFloat("tessFactor", tessFactor);
 	g_Shader->SetRawData("frustrumPlaneEquation", frustrumPlaneEquation, sizeof(D3DXVECTOR4) * 4);
 
-	/*if(GetAsyncKeyState('N'))
+	if(GetAsyncKeyState('N'))
 	{
 		g_Shader->SetBool("normals", true);
 	}
 	else
-	{*/
+	{
 		g_Shader->SetBool("normals", false);
-	//}
+	}
 
 	deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_3_CONTROL_POINT_PATCHLIST);
 

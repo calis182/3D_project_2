@@ -35,16 +35,13 @@ cbuffer EveryFrame
 struct VSIn
 {
 	float3 pos : POSITION;
-	float3 normal : NORMAL;
 	float2 uv : UV;
 };
 
 struct VSOut
 {
 	float3 pos : POSITION;
-	float3 normal : NORMAL;
 	float2 uv : UV;
-	float3 posW : POSITION1;
 };
 
 struct PSSceneIn
@@ -92,13 +89,8 @@ VSOut VSScene(VSIn input)
 	VSOut output = (VSOut)0;
 
 	output.pos = mul(float4(input.pos, 1), gW).xyz;
-	//output.pos = mul(float4(output.pos.xyz, 1), gV);
-	//output.pos = mul(float4(output.pos.xyz, 1), gP);
 
 	output.uv = input.uv;
-	output.normal = (mul(float4(input.normal, 1), gW)).xyz;
-
-	output.posW = mul(float4(input.pos, 1), gW).xyz;
 
 	return output;
 }
@@ -133,10 +125,6 @@ HSDataOutput ConstantHS(InputPatch<VSOut, 3> ip, uint PatchID : SV_PrimitiveID)
 		return output;
 	}
 	*/
-	for(int i = 0; i < 3; i++)
-		output.edges[i] = tessFactor;
-	output.inside = tessFactor;
-
 
 	/****************************************************
 					Frustrum culling
@@ -165,6 +153,12 @@ HSDataOutput ConstantHS(InputPatch<VSOut, 3> ip, uint PatchID : SV_PrimitiveID)
 		output.edges[2] = 0.0f;
 		output.inside = 0.0f;
 	}
+	else
+	{
+		for(int i = 0; i < 3; i++)
+			output.edges[i] = tessFactor;
+		output.inside = tessFactor;
+	}
 
 	return output;
 }
@@ -184,11 +178,50 @@ VSOut HS(InputPatch<VSOut, 3> p, uint i : SV_OutputControlPointID, uint PatchID 
 	VSOut output = (VSOut)0;
 
 	output.pos = p[i].pos;
-	output.normal = p[i].normal;
 	output.uv = p[i].uv;
-	output.posW = p[i].posW;
 
 	return output;
+}
+
+float3 Sobel( float2 tc )
+{
+	// Useful aliases
+	float2 pxSz = float2( 1.0f / 256.0f, 1.0f / 256.0f );
+	
+	// Compute the necessary offsets:
+	float2 o00 = tc + float2( -pxSz.x, -pxSz.y );
+	float2 o10 = tc + float2(    0.0f, -pxSz.y );
+	float2 o20 = tc + float2(  pxSz.x, -pxSz.y );
+
+	float2 o01 = tc + float2( -pxSz.x, 0.0f    );
+	float2 o21 = tc + float2(  pxSz.x, 0.0f    );
+
+	float2 o02 = tc + float2( -pxSz.x,  pxSz.y );
+	float2 o12 = tc + float2(    0.0f,  pxSz.y );
+	float2 o22 = tc + float2(  pxSz.x,  pxSz.y );
+
+	// Use of the sobel filter requires the eight samples
+	// surrounding the current pixel:
+	float h00 = gHeightMap.SampleLevel(ss, o00, 0);
+	float h10 = gHeightMap.SampleLevel(ss, o10, 0);
+	float h20 = gHeightMap.SampleLevel(ss, o20, 0);;
+
+	float h01 = gHeightMap.SampleLevel(ss, o01, 0);;
+	float h21 = gHeightMap.SampleLevel(ss, o21, 0);;
+
+	float h02 = gHeightMap.SampleLevel(ss, o02, 0);;
+	float h12 = gHeightMap.SampleLevel(ss, o12, 0);;
+	float h22 = gHeightMap.SampleLevel(ss, o22, 0);;
+
+	// Evaluate the Sobel filters
+	float Gx = h00 - h20 + 2.0f * h01 - 2.0f * h21 + h02 - h22;
+	float Gy = h00 + 2.0f * h10 + h20 - h02 - 2.0f * h12 - h22;
+
+	// Generate the missing Z
+	float Gz = 0.01f * sqrt( max(0.0f, 1.0f - Gx * Gx - Gy * Gy ) );
+
+	// Make sure the returned normal is of unit length
+	return normalize( float3( 2.0f * Gx, Gz, 2.0f * Gy ) );
 }
 
 //-----------------------------------------------------------------------------------------
@@ -204,14 +237,9 @@ PSSceneIn DS(HSDataOutput input, float3 UVW : SV_DomainLocation, const OutputPat
 					+ UVW.y * tri[1].pos
 					+ UVW.z * tri[2].pos;
 
-	output.posW = UVW.x * tri[0].posW
-				+ UVW.y * tri[1].posW
-				+ UVW.z * tri[2].posW;
+	output.posW = finalPos;
 
-	output.normal = UVW.x * tri[0].normal
-				  + UVW.y * tri[1].normal
-				  + UVW.z * tri[2].normal;
-	output.normal = normalize(output.normal);
+	float3 normal = float3(0, 1, 0);
 
 	output.uv = UVW.x * tri[0].uv
 			  + UVW.y * tri[1].uv
@@ -220,28 +248,13 @@ PSSceneIn DS(HSDataOutput input, float3 UVW : SV_DomainLocation, const OutputPat
 	float mipLevel = clamp((distance(finalPos, eyePos.xyz) - 100.0f) / 30.0f, 0.0f, 3.0f);
 	float h = gHeightMap.SampleLevel(ss, output.uv, mipLevel).r;
 
-	finalPos = finalPos + output.normal * h * 0.5 * 128;
+	finalPos = finalPos + normal * h * 0.5 * 128;
 
 	output.pos = mul(float4(finalPos, 1), gVP);
 
+	output.normal = Sobel(output.uv);
+
 	return output;
-}
-
-float3 filterNormal(float2 uv, float texelSize, float texelAspect)
-{
-	float4 h;
-
-	h[0] = gHeightMap.Sample(ss, uv + texelSize * float2( 0,-1)).r * texelAspect;
-	h[1] = gHeightMap.Sample(ss, uv + texelSize * float2(-1, 0)).r * texelAspect;
-	h[2] = gHeightMap.Sample(ss, uv + texelSize * float2( 1, 0)).r * texelAspect;
-	h[3] = gHeightMap.Sample(ss, uv + texelSize * float2( 0, 1)).r * texelAspect;
-	
-	float3 n;
-	n.z = h[0] - h[3];
-	n.x = h[1] - h[2];
-	n.y = 2;
-	
-	return normalize(n);
 }
 
 //-----------------------------------------------------------------------------------------
@@ -249,8 +262,6 @@ float3 filterNormal(float2 uv, float texelSize, float texelAspect)
 //-----------------------------------------------------------------------------------------
 float4 PSScene(PSSceneIn input) : SV_Target
 {
-	input.normal = filterNormal(input.uv, 1.0f/256.0f, 100);
-
 	//Blendmap
 	int repeat = 20;
 	float4 c0 = gTexture2.Sample(ss, input.uv*repeat);
@@ -266,10 +277,13 @@ float4 PSScene(PSSceneIn input) : SV_Target
 	texColor = lerp(texColor, c2, t.g);
 	texColor = lerp(texColor, c3, t.b);
 	//texColor = lerp(texColor, c4, t.a);
-
-	//Pointlight
+	
 	float3 toEye = normalize(eyePos.xyz - input.posW);
 
+	float4 ambient = light.ambient;
+	float4 diffuse = float4(0.0f, 0.0f, 0.0f, 0.0f);
+	float4 specular = float4(0.0f, 0.0f, 0.0f, 0.0f);
+	
 	float3 lightVec = light.pos - input.posW;
 	float d = length(lightVec);
 
@@ -280,19 +294,17 @@ float4 PSScene(PSSceneIn input) : SV_Target
 
 	float diffuseFactor = dot(lightVec, input.normal);
 
-	float4 diffuse;
-	float4 spec;
-
+	[flatten]
 	if(diffuseFactor > 0.0f)
 	{
 		float3 v = reflect(-lightVec, input.normal);
-		float specFactor = (max(dot(v, toEye), 0.0f));
+		float specFactor = pow(max(dot(v, toEye), 0.0f), 2.0f);
 
 		diffuse = diffuseFactor * light.diffuse;
-		spec = 0.5 * specFactor * light.specular;
+		specular = specFactor * light.specular * 0.5f;
 	}
 
-	texColor += diffuse + light.ambient + spec;
+	texColor = texColor * (ambient + diffuse) + specular;
 	
 	if(normals)
 		return float4(input.normal, 1);
