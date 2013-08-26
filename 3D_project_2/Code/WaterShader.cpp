@@ -229,15 +229,12 @@ bool WaterShader::SetReflectionParameters(D3DXMATRIX world, D3DXMATRIX reflectio
 	return true;
 }
 
-bool WaterShader::SetWaterParameters(D3DXMATRIX world, D3DXMATRIX reflectionMatrix, D3DXMATRIX view, D3DXMATRIX proj, D3DXVECTOR4 ambient, D3DXVECTOR4 diffuse, D3DXVECTOR3 lightPos, float waterTranslation, float reflectRefractScale)
+bool WaterShader::SetWaterParameters(D3DXMATRIX world, D3DXMATRIX reflectionMatrix, D3DXMATRIX view, D3DXMATRIX proj, float waterTranslation, float reflectRefractScale)
 {
 	this->world = world;
 	this->reflectionMatrix = reflectionMatrix;
 	this->view = view;
 	this->proj = proj;
-	this->ambient = ambient;
-	this->diffuse = diffuse;
-	this->lightPos = lightPos;
 	this->waterTranslation = waterTranslation;
 	this->reflectRefractScale = reflectRefractScale;
 	return true;

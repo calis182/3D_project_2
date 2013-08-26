@@ -46,7 +46,7 @@ public:
 	bool InitializeShader(ID3D11Device*, ID3D11DeviceContext*);
 	bool SetRefractionParameters(D3DXMATRIX, D3DXMATRIX, D3DXMATRIX, D3DXVECTOR4, D3DXVECTOR4, D3DXVECTOR4, D3DXVECTOR3);
 	bool SetReflectionParameters(D3DXMATRIX, D3DXMATRIX, D3DXMATRIX, D3DXVECTOR4, D3DXVECTOR4, D3DXVECTOR3);
-	bool SetWaterParameters(D3DXMATRIX, D3DXMATRIX, D3DXMATRIX, D3DXMATRIX, D3DXVECTOR4, D3DXVECTOR4, D3DXVECTOR3, float, float);
+	bool SetWaterParameters(D3DXMATRIX, D3DXMATRIX, D3DXMATRIX, D3DXMATRIX, float, float);
 	void RenderRefraction(ID3D11Device*, ID3D11DeviceContext*, ID3D11ShaderResourceView*);
 	void RenderReflection(ID3D11Device*, ID3D11DeviceContext*, ID3D11ShaderResourceView*);
 	void RenderWater(ID3D11Device*, ID3D11DeviceContext*, ID3D11ShaderResourceView*, ID3D11ShaderResourceView*);

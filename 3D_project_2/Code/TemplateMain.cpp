@@ -629,7 +629,7 @@ HRESULT Update(float deltaTime)
 	skyBox->update(camera->GetPosition());
 
 	// Update the position of the water to simulate motion.
-	m_waterTranslation += 0.001f;
+	m_waterTranslation += 0.05f * deltaTime;
 	if(m_waterTranslation > 1.0f)
 	{
 		m_waterTranslation -= 1.0f;
@@ -882,7 +882,7 @@ bool RenderScene()
 
 	D3DXMatrixTranslation(&world, 0, m_waterHeight, 0);
 	
-	m_WaterShader->SetWaterParameters(world, reflectionMatrix, view, proj, light->getAmbient(), light->getDiffuse(), light->getPosition(), m_waterTranslation, 0.01f);
+	m_WaterShader->SetWaterParameters(world, reflectionMatrix, view, proj, m_waterTranslation, 0.01f);
 	m_WaterShader->RenderWater(g_Device, g_DeviceContext, refractionTexture, reflectionTexture);
 	
 	return true;

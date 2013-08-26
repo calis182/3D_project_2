@@ -110,11 +110,11 @@ float4 WaterPixelShader(PixelInputType input) : SV_TARGET
 
 	//Calculate the projected reflection texture coordinates.
 	reflectTexCoord.x = input.reflectionPosition.x / input.reflectionPosition.w / 2.0f + 0.5f;
-	reflectTexCoord.y = -input.reflectionPosition.y / input.reflectionPosition.w / 2.0f + 0.5f;
+	reflectTexCoord.y = input.reflectionPosition.y / input.reflectionPosition.w / 2.0f + 0.5f;
 
 	// Calculate the projected refraction texture coordinates.
     refractTexCoord.x = input.refractionPosition.x / input.refractionPosition.w / 2.0f + 0.5f;
-    refractTexCoord.y = -input.refractionPosition.y / input.refractionPosition.w / 2.0f + 0.5f;
+    refractTexCoord.y = input.refractionPosition.y / input.refractionPosition.w / 2.0f + 0.5f;
 
 	//Sample the normal from thr normal mao texture.
 	normalMap = normalTexture.Sample(SampleType, input.tex);
