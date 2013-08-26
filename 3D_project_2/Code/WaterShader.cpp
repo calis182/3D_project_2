@@ -281,7 +281,6 @@ void WaterShader::RenderReflection(ID3D11Device* device, ID3D11DeviceContext* de
 void WaterShader::RenderWater(ID3D11Device* device, ID3D11DeviceContext* deviceContext, ID3D11ShaderResourceView* refractionTexture, ID3D11ShaderResourceView* reflectionTexture)
 {
 
-	D3DXVECTOR4 lightPos4 = D3DXVECTOR4(lightPos,0);
 	waterShader->SetResource("normalTexture", normalMap->getTexture());
 	waterShader->SetResource("refractionTexture", refractionTexture);
 	waterShader->SetResource("reflectionTexture", reflectionTexture);

@@ -82,9 +82,7 @@ PointLight* light;
 ObjMesh* object;
 
 SkyBox* skyBox;
-DynamicCubeMap* cubeMap;
-
-const float waterHeight = 10.0f;        
+DynamicCubeMap* cubeMap;       
 
 GaussianBlur* gaussianBlur;
 
@@ -755,7 +753,6 @@ HRESULT Render(float deltaTime)
 	BlendState::getInstance()->setState(0, g_DeviceContext);
 	particleSystem->Draw(g_DeviceContext, world, view, proj);
 
-
 	RenderRefractionToTexture();
 	RenderReflectonToTexture();
 	RenderScene();
@@ -790,7 +787,7 @@ bool RenderRefractionToTexture()
 	D3DXMATRIX world, view, proj;
 
 	//Setup a clipping plane based haeight of the water to clip everything above it.
-	clipPlane = D3DXVECTOR4(0.0f, -1.0f, 0.0f, waterHeight + 0.1f);
+	clipPlane = D3DXVECTOR4(0.0f, -1.0f, 0.0f, m_waterHeight + 0.1f);
 	
 	//Set the render target to be the refraction render to texture.
 	g_DeviceContext->OMSetRenderTargets( 1, &refractionTargetView, waterDepthStencilView );
@@ -854,7 +851,7 @@ bool RenderReflectonToTexture()
 	m_WaterShader->RenderReflection(g_Device, g_DeviceContext, reflectionTexture);
 	
 	// Reset the render target back to the original back buffer and not the render to texture anymore.
-	g_DeviceContext->OMSetRenderTargets(1, &reflectionTargetView, waterDepthStencilView);
+	g_DeviceContext->OMSetRenderTargets(1, mainTexture->getRTV(), waterDepthStencilView);
 
 	return true;
 }
