@@ -190,7 +190,7 @@ D3DXMATRIX Camera::RenderReflection(float height)
 	D3DXVECTOR3 up;
 	D3DXVECTOR3 lookAt;
 	float radians;
-
+	static float angle = 0;
 	// Setup the position of the camera in the world.
 	// For planar reflection invert the Y position of the camera.
 	position.x = this->m_position.x;
@@ -203,7 +203,8 @@ D3DXMATRIX Camera::RenderReflection(float height)
 	up.z = 0.0f;
 
 	// Calculate the rotation in radians.
-	radians = 45 * 0.0174532925f;
+	angle += 1;
+	radians = 90 * 0.0174532925f;
 
 	// Setup where the camera is looking.
 	lookAt.x = sinf(radians) + this->m_position.x;

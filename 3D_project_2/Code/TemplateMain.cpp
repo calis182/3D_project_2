@@ -743,7 +743,7 @@ HRESULT Render(float deltaTime)
 	skyBox->update(camera->GetPosition());
 	skyBox->render(view * proj, skyBox->getCubeMap());
 
-	waterSimulation->render(g_DeviceContext, view*proj, 64.0f, frustrumPlaneEquation);
+	//waterSimulation->render(g_DeviceContext, view*proj, 64.0f, frustrumPlaneEquation);
 
 	ID3D11Query* query = NULL;
 	D3D11_QUERY_DESC qd;
