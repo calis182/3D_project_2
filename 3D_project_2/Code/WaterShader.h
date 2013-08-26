@@ -32,7 +32,7 @@ private:
 
 	struct Vertex
 	{
-		D3DXVECTOR3 pos;
+		D3DXVECTOR4 pos;
 		D3DXVECTOR3 normal;
 		D3DXVECTOR2 uv;
 	};
