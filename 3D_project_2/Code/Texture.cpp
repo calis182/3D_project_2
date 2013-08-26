@@ -69,7 +69,7 @@ bool Texture::init(ID3D11Device* device, int x, int y, UINT textureFlags)
 	return true;
 }
 
-bool Texture::init(ID3D11Device* device, char* filename, UINT textureFlags)
+bool Texture::init(ID3D11Device* device, char* filename)
 {
 	if(FAILED(D3DX11CreateShaderResourceViewFromFile(device, filename, NULL, NULL, &SRV, NULL)))
 	{

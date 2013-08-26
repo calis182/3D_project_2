@@ -17,7 +17,7 @@ public:
 	~Texture();
 
 	bool init(ID3D11Device* device, int x, int y, UINT textureFlags);
-	bool init(ID3D11Device* device, char* filename, UINT textureFlags);
+	bool init(ID3D11Device* device, char* filename);
 
 	ID3D11Texture2D* getTexture();
 	ID3D11ShaderResourceView** getSRV();
