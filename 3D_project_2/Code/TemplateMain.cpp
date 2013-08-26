@@ -28,6 +28,7 @@
 #include "GaussianBlur.h"
 #include "WaterShader.h"
 #include "Texture.h"
+#include "WaterSimulation.h"
 
 void renderCubeMap(void* param);
 void extractPlanesFromFrustrum(D3DXVECTOR4* planeEquation, const D3DXMATRIX* viewProj, bool normalize = true);
@@ -83,6 +84,7 @@ ObjMesh* object;
 
 SkyBox* skyBox;
 DynamicCubeMap* cubeMap;
+WaterSimulation* waterSimulation;
 
 const float waterHeight = 10.0f;        
 
@@ -196,6 +198,8 @@ int WINAPI wWinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdL
 	delete light;
 	delete cubeMap;
 	delete object;
+
+	SAFE_DELETE(waterSimulation);
 
 	m_WaterShader->Shutdown();
 	delete m_WaterShader;
@@ -565,6 +569,10 @@ HRESULT InitDirect3D()
 	// Initialize the position of the water.
 	m_waterTranslation = 0.0f;
 
+	waterSimulation = new WaterSimulation();
+	if(!waterSimulation->init(g_Device, g_DeviceContext, D3DXVECTOR3(-128, -128, 15), 256, 256, 16, 16, 2))
+		return E_FAIL;
+
 	return S_OK;
 }
 
@@ -685,6 +693,9 @@ HRESULT Render(float deltaTime)
 	if(GetAsyncKeyState('M'))
 		tessFactor = 64;
 	
+	//Update water simulation
+	waterSimulation->update(g_DeviceContext, deltaTime);
+
 	//Render for all 6 cameras 
 	skyBox->update(cubeMap->getPosition());
 	for(int i = 0; i < 6; i++)
@@ -730,6 +741,8 @@ HRESULT Render(float deltaTime)
 
 	skyBox->update(camera->GetPosition());
 	skyBox->render(view * proj, skyBox->getCubeMap());
+
+	waterSimulation->render(g_DeviceContext, view*proj, 64.0f, frustrumPlaneEquation);
 
 	ID3D11Query* query = NULL;
 	D3D11_QUERY_DESC qd;
@@ -812,8 +825,8 @@ bool RenderRefractionToTexture()
 	skyBox->render(view * proj, skyBox->getCubeMap());
 	particleSystem->Draw(g_DeviceContext, world, view, proj);
 
-	m_WaterShader->SetRefractionParameters(world, view, proj, clipPlane, light->getAmbient(), light->getDiffuse(), light->getPosition());
-	m_WaterShader->RenderRefraction(g_Device, g_DeviceContext, refractionTexture);
+	//m_WaterShader->SetRefractionParameters(world, view, proj, clipPlane, light->getAmbient(), light->getDiffuse(), light->getPosition());
+	//m_WaterShader->RenderRefraction(g_Device, g_DeviceContext, refractionTexture);
 
 	// Reset the render target back to the original back buffer and not the render to texture anymore.
 	g_DeviceContext->OMSetRenderTargets(1, &refractionTargetView, waterDepthStencilView);
@@ -845,13 +858,13 @@ bool RenderReflectonToTexture()
 	view = camera->View();
 	proj = camera->Proj();
 
-	g_Terrain->render(g_DeviceContext, world, view, proj, camera->GetPosition(), *light, *mainTexture->getSRV(), 16, frustrumPlaneEquation);
-	skyBox->render(view * proj, skyBox->getCubeMap());
-	particleSystem->Draw(g_DeviceContext, world, view, proj);
+	g_Terrain->render(g_DeviceContext, world, reflectionMatrix, proj, camera->GetPosition(), *light, *mainTexture->getSRV(), 16, frustrumPlaneEquation);
+	skyBox->render(reflectionMatrix * proj, skyBox->getCubeMap());
+	particleSystem->Draw(g_DeviceContext, world, reflectionMatrix, proj);
 
 
-	m_WaterShader->SetReflectionParameters(world, reflectionMatrix, proj, light->getAmbient(), light->getDiffuse(), light->getPosition());
-	m_WaterShader->RenderReflection(g_Device, g_DeviceContext, reflectionTexture);
+	//m_WaterShader->SetReflectionParameters(world, reflectionMatrix, proj, light->getAmbient(), light->getDiffuse(), light->getPosition());
+	//m_WaterShader->RenderReflection(g_Device, g_DeviceContext, reflectionTexture);
 	
 	// Reset the render target back to the original back buffer and not the render to texture anymore.
 	g_DeviceContext->OMSetRenderTargets(1, &reflectionTargetView, waterDepthStencilView);
