@@ -97,12 +97,12 @@ bool WaterSimulation::initResources(ID3D11Device* device, ID3D11DeviceContext* d
 			const float fFrequency = 0.1f;
 			if ( i*i+j*j != 0.0f )
 			{
-				waterData[this->calcY * i + j].height = 80.0f * sinf( sqrt( (float)(i*i+j*j) ) * fFrequency ) / ( sqrt( (float)(i*i+j*j) ) * fFrequency );
+				waterData[this->calcY * i + j].height = 60.0f * sinf( sqrt( (float)(i*i+j*j) ) * fFrequency ) / ( sqrt( (float)(i*i+j*j) ) * fFrequency );
 				waterData[this->calcY * i + j].pipes = D3DXVECTOR4(0, 0, 0, 0);
 			}
 			else
 			{
-				waterData[this->calcY * i + j].height = 80.0f;
+				waterData[this->calcY * i + j].height = 60.0f;
 				waterData[this->calcY * i + j].pipes = D3DXVECTOR4(0, 0, 0, 0);
 			}
 		}
