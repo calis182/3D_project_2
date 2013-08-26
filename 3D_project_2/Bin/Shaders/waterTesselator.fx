@@ -66,6 +66,7 @@ VSOut VSScene(VSIn input)
 	VSOut output;
 
 	output.pos = mul(float4(input.pos, 1), gW);
+
 	output.uv = input.uv;
 
 	return output;
@@ -221,7 +222,7 @@ float4 PSScene(PSIn input) : SV_Target
 
 	float3 lightVec = -float3(0.0f, 0.0f, -1.0f);
 
-	ambient = float4(0.5f, 0.5f, 0.5f, 0.5f);
+	ambient = float4(1, 1, 1, 1);
 
 	float diffuseFactor = dot(lightVec, normal);
 
@@ -234,17 +235,13 @@ float4 PSScene(PSIn input) : SV_Target
 		diffuse = diffuseFactor * float4(0.5f, 0.5f, 0.5f, 0.5f);
 		specular = specFactor * float4(0.5f, 0.5f, 0.5f, 0.5f);
 	}
-	
-	float4 color;
+
 	float4 textureColor = waterTexture.Sample(ss, input.uv/dispatchSize);
 
-
-	textureColor += ambient * diffuse * specular;
+	//textureColor = textureColor * (ambient + diffuse) + specular;
 	
-	//return float4(input.pos.y, 0, 0, 1);
 	return textureColor;
 	return float4(normal, 1);
-	return color;
 }
 
 technique11 BasicTech

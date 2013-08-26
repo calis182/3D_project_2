@@ -69,8 +69,8 @@ void CSMain(uint3 groupID : SV_GroupID, uint3 dispatchThreadID : SV_DispatchThre
 			newFlow.w = ( loadedPoints[groupIndex + padded_x - 1].height - loadedPoints[groupIndex].height );
 		}
 	}
-	
-	const float TIME_STEP = 0.1f;
+
+	const float TIME_STEP = 0.05f;
 	const float PIPE_AREA = 0.0001f;
 	const float GRAVITATION = 10.0f;
 	const float PIPE_LENGTH = 0.2f;
@@ -78,7 +78,7 @@ void CSMain(uint3 groupID : SV_GroupID, uint3 dispatchThreadID : SV_DispatchThre
 	const float COLUMN_AREA = 0.05f;
 	const float DAMPING_FACTOR = 1;//0.9999f;
 	
-	float accelFactor = (min(9999.0f, TIME_STEP) * PIPE_AREA * GRAVITATION) / (PIPE_LENGTH * COLUMN_AREA);
+	float accelFactor = (min(timeFactors.x, TIME_STEP) * PIPE_AREA * GRAVITATION) / (PIPE_LENGTH * COLUMN_AREA);
 	
 	newFlow = (newFlow * accelFactor + loadedPoints[groupIndex].flow) * DAMPING_FACTOR;
 	

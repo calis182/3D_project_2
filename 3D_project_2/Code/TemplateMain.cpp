@@ -543,7 +543,7 @@ HRESULT InitDirect3D()
 
 	cubeMap = new DynamicCubeMap(g_Device);
 	cubeMap->init();
-	cubeMap->setUpCameras(D3DXVECTOR3(0, 20, 0));
+	cubeMap->setUpCameras(D3DXVECTOR3(0, 30, 0));
 
 	BlendState::getInstance()->createBlendState(g_Device);
 
@@ -717,6 +717,7 @@ HRESULT Render(float deltaTime)
 		extractPlanesFromFrustrum(frustrumPlaneEquation, &viewProj);
 
 		skyBox->render(view * proj, skyBox->getCubeMap());
+		waterSimulation->render(g_DeviceContext, view*proj, tessFactor, frustrumPlaneEquation);
 		g_Terrain->render(g_DeviceContext, world, view, proj, cubeMap->getPosition(), *light, skyBox->getCubeMap(), tessFactor, frustrumPlaneEquation);
 
 		particleSystem->Draw(g_DeviceContext, world, view, proj);
@@ -742,8 +743,8 @@ HRESULT Render(float deltaTime)
 
 	skyBox->update(camera->GetPosition());
 	skyBox->render(view * proj, skyBox->getCubeMap());
-
-	waterSimulation->render(g_DeviceContext, view*proj, 64.0f, frustrumPlaneEquation);
+	
+	//waterSimulation->render(g_DeviceContext, view*proj, tessFactor, frustrumPlaneEquation);
 
 	ID3D11Query* query = NULL;
 	D3D11_QUERY_DESC qd;

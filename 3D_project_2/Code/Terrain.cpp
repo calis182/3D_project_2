@@ -109,53 +109,8 @@ bool Terrain::init(ID3D11Device* device, ID3D11DeviceContext* deviceContext)
 			vertices[in].uv = D3DXVECTOR2(i * uvSize, j * uvSize);
 		}
 	}
-	/*
-	vertices[0].pos = D3DXVECTOR3(-width*0.5f, 0, -height*0.5f);
-	vertices[1].pos = D3DXVECTOR3(width*0.5f, 0, -height*0.5f);
-	vertices[2].pos = D3DXVECTOR3(-width*0.5f, 0, height*0.5f);
-	vertices[3].pos = D3DXVECTOR3(width*0.5f, 0, height*0.5f);
-
-	vertices[0].normal = D3DXVECTOR3(0,1,0);
-	vertices[1].normal = D3DXVECTOR3(0,1,0);
-	vertices[2].normal = D3DXVECTOR3(0,1,0);
-	vertices[3].normal = D3DXVECTOR3(0,1,0);
-
-	vertices[0].uv = D3DXVECTOR2(0,0);
-	vertices[1].uv = D3DXVECTOR2(0,1);
-	vertices[2].uv = D3DXVECTOR2(1,0);
-	vertices[3].uv = D3DXVECTOR2(1,1);
-	*/
 
 	D3DXVECTOR3 vec1, vec2, vec3, vec4, vec5;
-
-	//for(int i = 0; i < width-1; i++)
-	/*for(int i = 0; i < 2-1; i++)
-	{
-		//for(int j = 0; j < height-1; j++)
-		for(int j = 0; j < 2-1; j++)
-		{
-			vec1 = vertices[i * width + j].pos;
-			vec2 = vertices[i * width + (j+1)].pos;
-			vec3 = vertices[(i+1) * width + (j+1)].pos;
-
-			vec4 = vec2 - vec1;
-			vec5 = vec3 - vec1;
-
-			D3DXVECTOR3 temp = vec5;
-
-			vec5.x = (vec4.y * temp.z) - (vec4.z * temp.y);
-			vec5.y = (vec4.z * temp.x) - (vec4.x * temp.z);
-			vec5.z = (vec4.x * temp.y) - (vec4.y * temp.x);
-
-			float length = sqrtf((vec5.x * vec5.x) + (vec5.y * vec5.y) + (vec5.z * vec5.z));
-
-			vec5.x /= length;
-			vec5.y /= length;
-			vec5.z /= length;
-
-			vertices[i * width + j].normal = -vec5;
-		}
-	}*/
 
 	ind = 0;
 	for(int i = 0; i < numOfStartingVertex-1; i++)
