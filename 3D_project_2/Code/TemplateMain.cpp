@@ -693,6 +693,16 @@ HRESULT Render(float deltaTime)
 
 	if(GetAsyncKeyState('M'))
 		tessFactor = 64;
+
+	static bool waterType = false;
+	if(GetAsyncKeyState('C'))
+	{
+		waterType = true;
+	}
+	if(GetAsyncKeyState('X'))
+	{
+		waterType = false;
+	}
 	
 	//Update water simulation
 	waterSimulation->update(g_DeviceContext, deltaTime);
@@ -717,7 +727,8 @@ HRESULT Render(float deltaTime)
 		extractPlanesFromFrustrum(frustrumPlaneEquation, &viewProj);
 
 		skyBox->render(view * proj, skyBox->getCubeMap());
-		waterSimulation->render(g_DeviceContext, view*proj, tessFactor, frustrumPlaneEquation, cubeMap->getPosition());
+		if(waterType)
+			waterSimulation->render(g_DeviceContext, view*proj, tessFactor, frustrumPlaneEquation, cubeMap->getPosition());
 		g_Terrain->render(g_DeviceContext, world, view, proj, cubeMap->getPosition(), *light, tessFactor, frustrumPlaneEquation);
 
 		particleSystem->Draw(g_DeviceContext, world, view, proj);
@@ -744,7 +755,8 @@ HRESULT Render(float deltaTime)
 	skyBox->update(camera->GetPosition());
 	skyBox->render(view * proj, skyBox->getCubeMap());
 	
-	waterSimulation->render(g_DeviceContext, view*proj, tessFactor, frustrumPlaneEquation, camera->GetPosition());
+	if(waterType)
+		waterSimulation->render(g_DeviceContext, view*proj, tessFactor, frustrumPlaneEquation, camera->GetPosition());
 
 	ID3D11Query* query = NULL;
 	D3D11_QUERY_DESC qd;
@@ -770,10 +782,12 @@ HRESULT Render(float deltaTime)
 	BlendState::getInstance()->setState(0, g_DeviceContext);
 	particleSystem->Draw(g_DeviceContext, world, view, proj);
 
-	RenderRefractionToTexture();
-	RenderReflectonToTexture();
-	RenderScene();
-
+	if(!waterType)
+	{
+		RenderRefractionToTexture();
+		RenderReflectonToTexture();
+		RenderScene();
+	}
 	//Gaussian blur
 	renderTargets[0] = g_RenderTargetView;
 	g_DeviceContext->OMSetRenderTargets(1, renderTargets, g_DepthStencilView);
