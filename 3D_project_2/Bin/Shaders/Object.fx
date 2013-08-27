@@ -60,7 +60,7 @@ Texture2D texture1;
 //-----------------------------------------------------------------------------------------
 RasterizerState NoCulling
 {
-	CullMode = NONE;
+	CullMode = none;
 	//FillMode = wireframe;
 };
 
@@ -90,27 +90,27 @@ void GSScene(triangle PSSceneIn input[3], inout TriangleStream<PSSceneIn> Output
 
 	float3 normalTri;
 	bool found = false;
-	normalTri = normalize((input[0].normal + input[1].normal +input[2].normal)/3);
+	normalTri = normalize((input[0].normal + input[1].normal + input[2].normal)/3);
 
 	
 
-		for(int i = 0; i < 3; i++)
+	for(int i = 0; i < 3; i++)
+	{
+		float3 toEye = normalize(eyePos.xyz - input[i].posW);
+		float angle = dot(input[i].normal, toEye);
+		if(angle > 0 && angle < 3.14f)
 		{
-			float3 toEye = normalize(eyePos.xyz - input[i].posW);
-			float angle = dot(input[i].normal, toEye);
-			if(angle > -1 && angle < 0.1)
-			{
-				found = true;
-			}
+			found = true;
 		}
+	}
 
-		if(found)
+	if(found)
+	{
+		for(int i = 0; i<3; i++)
 		{
-			for(int i = 0; i<3; i++)
-			{
-				OutputStream.Append( input[i] );
-			}
+			OutputStream.Append( input[i] );
 		}
+	}
 	
 }
 
