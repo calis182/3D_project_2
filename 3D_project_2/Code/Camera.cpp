@@ -184,33 +184,41 @@ void Camera::UpdateViewMatrix()
 	this->mView(3, 3) = 1.0f;
 }
 
-D3DXMATRIX Camera::RenderReflection(float height)
+D3DXMATRIX Camera::RenderReflection(float height, float angleX, float angleY)
 {
 	D3DXVECTOR3 position;
 	D3DXVECTOR3 up;
 	D3DXVECTOR3 lookAt;
+	D3DXVECTOR4 right;
 	float radians;
-	static float angle = 0;
+	
+	D3DXMATRIX rotX, rotY, rotCam;
+
 	// Setup the position of the camera in the world.
 	// For planar reflection invert the Y position of the camera.
 	position.x = this->m_position.x;
 	position.y = -this->m_position.y + (height * 2.0f);
 	position.z = this->m_position.z;
 
-	// Setup the vector that points upwards.
-	up.x = 0.0f;
-	up.y = 1.0f;
-	up.z = 0.0f;
+	D3DXMatrixRotationX(&rotX, angleX * 0.0174532925f );
+	D3DXMatrixRotationY(&rotY, angleY * 0.0174532925f );
+	rotCam = rotX * rotY;
 
-	// Calculate the rotation in radians.
-	angle += 1;
-	radians = 90 * 0.0174532925f;
-
+	D3DXVec3Transform(&right, &D3DXVECTOR3(1, 0, 0), &rotCam);
+	
 	// Setup where the camera is looking.
-	lookAt.x = sinf(radians) + this->m_position.x;
+	lookAt.x = sinf(angleX * 0.0174532925f) + this->m_position.x;
 	lookAt.y = position.y;
-	lookAt.z = cosf(radians) + this->m_position.z;
+	lookAt.z = cosf(angleY * 0.0174532925f) + this->m_position.z;
 
+	D3DXVECTOR3 temp1, temp2;
+	temp1.x = right.x;
+	temp1.y = right.y;
+	temp1.z = right.z;
+	temp2.x = lookAt.x - position.x;
+	temp2.y = lookAt.y - position.y;
+	temp2.z = lookAt.z - position.z;
+	D3DXVec3Cross(&up, &temp1, &temp2);
 	D3DXMatrixLookAtLH(&m_reflectionViewMatrix, &position, &lookAt, &up);
 
 	return this->m_reflectionViewMatrix;
