@@ -78,7 +78,7 @@ void CSMain(uint3 groupID : SV_GroupID, uint3 dispatchThreadID : SV_DispatchThre
 	const float COLUMN_AREA = 0.05f;
 	const float DAMPING_FACTOR = 1;//0.9999f;
 	
-	float accelFactor = (min(timeFactors.x, TIME_STEP) * PIPE_AREA * GRAVITATION) / (PIPE_LENGTH * COLUMN_AREA);
+	float accelFactor = (min(9999.0f, TIME_STEP) * PIPE_AREA * GRAVITATION) / (PIPE_LENGTH * COLUMN_AREA);
 	
 	newFlow = (newFlow * accelFactor + loadedPoints[groupIndex].flow) * DAMPING_FACTOR;
 	

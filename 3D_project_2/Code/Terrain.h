@@ -17,7 +17,7 @@ public:
 	HRESULT initShader(ID3D11Device* device, ID3D11DeviceContext* deviceContext);
 	bool init(ID3D11Device* device, ID3D11DeviceContext* deviceContext);
 	void shutdown();
-	void render(ID3D11DeviceContext* deviceContext, D3DXMATRIX world, D3DXMATRIX view, D3DXMATRIX proj, D3DXVECTOR3 cam, PointLight& light, ID3D11ShaderResourceView* cubeMap, float tessFactor, D3DXVECTOR4* frustrumPlaneEquation);
+	void render(ID3D11DeviceContext* deviceContext, D3DXMATRIX world, D3DXMATRIX view, D3DXMATRIX proj, D3DXVECTOR3 cam, PointLight& light, float tessFactor, D3DXVECTOR4* frustrumPlaneEquation);
 
 	int getIndexCount();
 

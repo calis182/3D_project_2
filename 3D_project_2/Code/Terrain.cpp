@@ -235,9 +235,8 @@ void Terrain::shutdown()
 	delete g_Fence;
 }
 
-void Terrain::render(ID3D11DeviceContext* deviceContext, D3DXMATRIX world, D3DXMATRIX view, D3DXMATRIX proj, D3DXVECTOR3 cam, PointLight& light, ID3D11ShaderResourceView* cubeMap, float tessFactor, D3DXVECTOR4* frustrumPlaneEquation)
+void Terrain::render(ID3D11DeviceContext* deviceContext, D3DXMATRIX world, D3DXMATRIX view, D3DXMATRIX proj, D3DXVECTOR3 cam, PointLight& light, float tessFactor, D3DXVECTOR4* frustrumPlaneEquation)
 {
-	//g_Shader->SetResource("cubeMap", cubeMap);
 	g_Shader->SetResource("gTexture1", texture1.getTexture());
 	g_Shader->SetResource("gTexture2", texture2.getTexture());
 	g_Shader->SetResource("gTexture3", texture3.getTexture());
