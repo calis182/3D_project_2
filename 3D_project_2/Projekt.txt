@@ -7,3 +7,5 @@ Tessellering 2-10
 Kollisionshantering 2-6
 Bumb-mapping 1-5
 Vatten 3
+Geometry instancing
+GPGPU
