@@ -61,6 +61,6 @@ public:
 	void UpdateViewMatrix();
 
 	//Temp reflection
-	D3DXMATRIX RenderReflection(float height);
+	D3DXMATRIX RenderReflection(float height, float angleX, float angleY);
 };
 #endif

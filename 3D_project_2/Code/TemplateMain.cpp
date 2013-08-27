@@ -571,7 +571,7 @@ HRESULT InitDirect3D()
 	m_waterTranslation = 0.0f;
 
 	waterSimulation = new WaterSimulation();
-	if(!waterSimulation->init(g_Device, g_DeviceContext, D3DXVECTOR3(-128, -128, 15), 256, 256, 16, 16, 5))
+	if(!waterSimulation->init(g_Device, g_DeviceContext, D3DXVECTOR3(-256, -256, 5), 512, 512, 16, 16, 5))
 		return E_FAIL;
 
 	return S_OK;
@@ -851,12 +851,15 @@ bool RenderReflectonToTexture()
 	//Clear the reflection to texture.
 	g_DeviceContext->ClearRenderTargetView( reflectionTargetView, color);
 
+
+	int x, y;
+	input->getDiffMouseLocation(x, y);
 	// Use the camera to render the reflection and create a reflection view matrix.
 	// Get the camera reflection view matrix instead of the normal view matrix.
-	reflectionMatrix = camera->RenderReflection(m_waterHeight);
+	reflectionMatrix = camera->RenderReflection(m_waterHeight, (float)x*0.5, (float)y*0.5);
 
 	D3DXMatrixIdentity(&world);
-	view = camera->View();
+	//view = camera->View();
 	proj = camera->Proj();
 
 	g_Terrain->render(g_DeviceContext, world, reflectionMatrix, proj, camera->GetPosition(), *light, *mainTexture->getSRV(), 16, frustrumPlaneEquation);
@@ -891,8 +894,9 @@ bool RenderScene()
 	D3DXMatrixIdentity(&world);
 	view = camera->View();
 	proj = camera->Proj();
-
-	reflectionMatrix = camera->RenderReflection(m_waterHeight);
+	int x, y;
+	input->getDiffMouseLocation(x, y);
+	reflectionMatrix = camera->RenderReflection(m_waterHeight, (float)x*0.5f, (float)y*0.5f);
 
 	D3DXMatrixTranslation(&world, 0, m_waterHeight, 0);
 	
