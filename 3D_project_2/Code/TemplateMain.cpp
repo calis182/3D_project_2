@@ -571,7 +571,7 @@ HRESULT InitDirect3D()
 	m_waterTranslation = 0.0f;
 
 	waterSimulation = new WaterSimulation();
-	if(!waterSimulation->init(g_Device, g_DeviceContext, D3DXVECTOR3(-256, -256, 5), 512, 512, 16, 16, 5))
+	if(!waterSimulation->init(g_Device, g_DeviceContext, D3DXVECTOR3(-256, -256, 15), 512, 512, 16, 16, 5))
 		return E_FAIL;
 
 	return S_OK;

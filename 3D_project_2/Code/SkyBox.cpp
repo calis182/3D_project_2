@@ -152,7 +152,7 @@ void SkyBox::render(D3DXMATRIX vp, ID3D11ShaderResourceView* cubeMap)
 void SkyBox::update(D3DXVECTOR3 cameraPos)
 {
 	D3DXMATRIX scale;
-	D3DXMatrixScaling(&scale, 5, 5, 5);
+	D3DXMatrixScaling(&scale, 10, 10, 10);
 	D3DXMatrixTranslation(&translation, cameraPos.x, cameraPos.y, cameraPos.z);
 	D3DXMatrixIdentity(&world);
 	world *= scale * translation;
