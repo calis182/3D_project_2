@@ -89,21 +89,29 @@ void GSScene(triangle PSSceneIn input[3], inout TriangleStream<PSSceneIn> Output
 {
 
 	float3 normalTri;
-
+	bool found = false;
 	normalTri = normalize((input[0].normal + input[1].normal +input[2].normal)/3);
 
-	float3 toEye = normalize(eyePos.xyz - input[0].posW);
-	float angle = acos(toEye*normalTri);
+	
 
-	if(angle < 3.14 && angle > 0)
-	{
-		for(int i = 0; i<3; i++)
+		for(int i = 0; i < 3; i++)
 		{
-		
-			OutputStream.Append( input[i] );
-		
+			float3 toEye = normalize(eyePos.xyz - input[i].posW);
+			float angle = dot(input[i].normal, toEye);
+			if(angle > -1 && angle < 0.1)
+			{
+				found = true;
+			}
 		}
-	}
+
+		if(found)
+		{
+			for(int i = 0; i<3; i++)
+			{
+				OutputStream.Append( input[i] );
+			}
+		}
+	
 }
 
 //-----------------------------------------------------------------------------------------
