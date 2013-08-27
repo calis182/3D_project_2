@@ -796,8 +796,6 @@ HRESULT Render(float deltaTime)
 	return S_OK;
 }
 
-
-
 bool RenderRefractionToTexture()
 {
 	D3DXVECTOR4 clipPlane;

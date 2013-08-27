@@ -9,7 +9,18 @@ cbuffer MatrixBuffer
 };
 
 Texture2D shaderTexture;
-SamplerState SampleType;
+SamplerState SampleType
+{
+	Filter = MIN_MAG_MIP_LINEAR;
+	AddressU = Wrap;
+	AddressV = Wrap;
+	AddressW = Wrap;
+	MipLODBias = 0;
+	MaxAnisotropy = 1;
+	ComparisonFunc = ALWAYS;
+	MinLOD = 0;
+	MaxLOD = 3.402823466e+38f;
+};
 
 cbuffer LightBuffer
 {
