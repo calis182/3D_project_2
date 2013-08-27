@@ -718,7 +718,7 @@ HRESULT Render(float deltaTime)
 
 		skyBox->render(view * proj, skyBox->getCubeMap());
 		waterSimulation->render(g_DeviceContext, view*proj, tessFactor, frustrumPlaneEquation, cubeMap->getPosition());
-		g_Terrain->render(g_DeviceContext, world, view, proj, cubeMap->getPosition(), *light, skyBox->getCubeMap(), tessFactor, frustrumPlaneEquation);
+		g_Terrain->render(g_DeviceContext, world, view, proj, cubeMap->getPosition(), *light, tessFactor, frustrumPlaneEquation);
 
 		particleSystem->Draw(g_DeviceContext, world, view, proj);
 	}
@@ -755,7 +755,7 @@ HRESULT Render(float deltaTime)
 
 	g_DeviceContext->Begin(query);
 	
-	g_Terrain->render(g_DeviceContext, world, view, proj, camera->GetPosition(), *light, *mainTexture->getSRV(), tessFactor, frustrumPlaneEquation);
+	g_Terrain->render(g_DeviceContext, world, view, proj, camera->GetPosition(), *light, tessFactor, frustrumPlaneEquation);
 
 	g_DeviceContext->End(query);
 
@@ -822,7 +822,7 @@ bool RenderRefractionToTexture()
 	proj = camera->Proj();
 
 	
-	g_Terrain->render(g_DeviceContext, world, view, proj, camera->GetPosition(), *light, *mainTexture->getSRV(), 16, frustrumPlaneEquation);
+	g_Terrain->render(g_DeviceContext, world, view, proj, camera->GetPosition(), *light, 16, frustrumPlaneEquation);
 	skyBox->render(view * proj, skyBox->getCubeMap());
 	particleSystem->Draw(g_DeviceContext, world, view, proj);
 
@@ -862,7 +862,7 @@ bool RenderReflectonToTexture()
 	//view = camera->View();
 	proj = camera->Proj();
 
-	g_Terrain->render(g_DeviceContext, world, reflectionMatrix, proj, camera->GetPosition(), *light, *mainTexture->getSRV(), 16, frustrumPlaneEquation);
+	g_Terrain->render(g_DeviceContext, world, reflectionMatrix, proj, camera->GetPosition(), *light, 16, frustrumPlaneEquation);
 	skyBox->render(reflectionMatrix * proj, skyBox->getCubeMap());
 	particleSystem->Draw(g_DeviceContext, world, reflectionMatrix, proj);
 
